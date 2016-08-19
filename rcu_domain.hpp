@@ -9,5 +9,8 @@ namespace std {
 		virtual void call(class rcu_head *rhp,
 				  void cbf(class rcu_head *rhp)) = 0;
 		virtual void barrier() noexcept = 0;
+		virtual void quiescent_state() noexcept = 0;
+		virtual void thread_offline() noexcept = 0;
+		virtual void thread_online() noexcept = 0;
 	};
 }
