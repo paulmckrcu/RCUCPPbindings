@@ -14,7 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = urcucpp
+PROGS = urcu
 GCC_ARGS = -g
 
 all: $(PROGS)
@@ -29,8 +29,8 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-urcucpp: urcucpp.C urcu-signal.h rcu.h
-	g++ $(GCC_ARGS) -o urcucpp urcucpp.C -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+urcu: urcu.cpp urcu-signal.h rcu.h
+	g++ $(GCC_ARGS) -o urcu urcu.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 clean:
 	rm -f $(PROGS)
