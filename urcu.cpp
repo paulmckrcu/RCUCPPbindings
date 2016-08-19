@@ -14,10 +14,22 @@ void my_func(struct std::rcu_head *rhp)
 	std::cout << "Hello World from a callback!\n";
 }
 
-void synchronize_rcu_abstract(class std::rcu_domain &p)
+void synchronize_rcu_abstract(class std::rcu_domain &p, std::string s)
 {
+	std::cout << s << "\n";
+	p.register_thread();
+	p.read_lock();
+	p.read_unlock();
+	p.quiescent_state();
 	p.synchronize();
+	p.call(&my_foo.rh, my_func);
+	p.barrier();
+	p.unregister_thread();
 }
+
+extern class std::rcu_domain &rb;
+extern class std::rcu_domain &rm;
+extern class std::rcu_domain &rq;
 
 int main()
 {
@@ -32,12 +44,8 @@ int main()
 	std::rcu_barrier();
 	std::rcu_unregister_thread();
 
-	std::cout << "Hello World via derived class!\n";
-	rs.register_thread();
-	rs.read_lock();
-	rs.read_unlock();
-	synchronize_rcu_abstract(rs);
-	rs.call(&my_foo.rh, my_func);
-	rs.barrier();
-	rs.unregister_thread();
+	synchronize_rcu_abstract(rs, "Derived class rcu_signal");
+	synchronize_rcu_abstract(rb, "Derived class rcu_bp");
+	synchronize_rcu_abstract(rm, "Derived class rcu_mb");
+	synchronize_rcu_abstract(rq, "Derived class rcu_qsbr");
 }
