@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unistd.h>
-#include "urcu-signal.h"
+#include "urcu-signal.hpp"
 
 struct foo {
 	int a;
