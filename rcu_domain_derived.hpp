@@ -1,6 +1,16 @@
 // Common code for userspace RCU concrete class definition.
 
 public:
+	void register_thread()
+	{
+		rcu_register_thread();
+	}
+
+	void unregister_thread()
+	{
+		rcu_unregister_thread();
+	}
+
 	void read_lock() noexcept
 	{
 		rcu_read_lock();

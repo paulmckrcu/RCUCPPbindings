@@ -23,11 +23,21 @@ int main()
 {
 	class std::rcu_signal rs;
 
+	std::rcu_register_thread();
 	std::rcu_read_lock();
 	std::rcu_read_unlock();
 	std::synchronize_rcu();
 	std::cout << "Hello World!\n";
 	std::call_rcu(&my_foo.rh, my_func);
+	std::rcu_barrier();
+	std::rcu_unregister_thread();
+
+	std::cout << "Hello World via derived class!\n";
+	rs.register_thread();
+	rs.read_lock();
+	rs.read_unlock();
 	synchronize_rcu_abstract(rs);
-	sleep(1);
+	rs.call(&my_foo.rh, my_func);
+	std::rcu_barrier();
+	rs.unregister_thread();
 }
