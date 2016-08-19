@@ -1,0 +1,9 @@
+http://coliru.stacked-crooked.com/
+
+	Run compilers (clang++, g++) with different versions of
+	the standard.
+
+http://en.cppreference.com/w/cpp/memory/shared_ptr
+
+	As above, but also allows compiler version to be specified
+	as well.
