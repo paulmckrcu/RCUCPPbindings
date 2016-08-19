@@ -1,7 +1,10 @@
+namespace std {
 	class rcu_domain {
 	public:
-		void read_lock() noexcept;
-		void read_unlock() noexcept;
-		void synchronize() noexcept;
-		void call(void cbf(class rcu_head *rhp), class rcu_head *rhp);
+		virtual void read_lock() noexcept = 0;
+		virtual void read_unlock() noexcept = 0;
+		virtual void synchronize() noexcept = 0;
+		virtual void call(class rcu_head *rhp,
+				  void cbf(class rcu_head *rhp)) = 0;
 	};
+}

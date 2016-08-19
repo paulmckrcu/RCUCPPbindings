@@ -15,7 +15,7 @@
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
 PROGS = urcu
-GCC_ARGS = -g
+GCC_ARGS = -g -std=c++11
 
 all: $(PROGS)
 
