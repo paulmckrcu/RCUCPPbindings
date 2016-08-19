@@ -8,5 +8,6 @@ namespace std {
 		virtual void synchronize() noexcept = 0;
 		virtual void call(class rcu_head *rhp,
 				  void cbf(class rcu_head *rhp)) = 0;
+		virtual void barrier() noexcept = 0;
 	};
 }

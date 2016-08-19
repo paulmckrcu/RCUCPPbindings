@@ -31,3 +31,8 @@ public:
 	{
 		call_rcu(rhp, cbf);
 	}
+
+	void barrier() noexcept
+	{
+		rcu_barrier();
+	}

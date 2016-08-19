@@ -38,6 +38,6 @@ int main()
 	rs.read_unlock();
 	synchronize_rcu_abstract(rs);
 	rs.call(&my_foo.rh, my_func);
-	std::rcu_barrier();
+	rs.barrier();
 	rs.unregister_thread();
 }
