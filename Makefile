@@ -29,7 +29,7 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-urcu: urcu.cpp urcu-signal.hpp rcu.hpp
+urcu: urcu.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp
 	g++ $(GCC_ARGS) -o urcu urcu.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 clean:
