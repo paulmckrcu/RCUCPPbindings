@@ -1,4 +1,4 @@
-#include "rcu.h"
+#include "rcu.hpp"
 #define _LGPL_SOURCE
 #define RCU_SIGNAL
 namespace std {
