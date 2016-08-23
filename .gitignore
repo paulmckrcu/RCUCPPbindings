@@ -1,5 +1,3 @@
-urcu
 cds-2.1.0
 libcds-2.1.0.tar.gz
 *.swp
-*.o
