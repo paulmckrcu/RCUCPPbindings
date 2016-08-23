@@ -16,15 +16,23 @@ namespace std {
 			this->container_ptr = containing_class;
 		}
 
+		class rcu_head_ptr<T> *
+		rcu_head_to_rcu_head_ptr(struct rcu_head *rhp)
+		{
+			return static_cast<rcu_head_ptr<T> *>(rhp);
+		}
+
 		T *enclosing_class()
 		{
 			return this->container_ptr;
 		}
 
-		class rcu_head_ptr<T> *
-		rcu_head_to_rcu_head_ptr(struct rcu_head *rhp)
+		T *enclosing_class(struct rcu_head *rhp)
 		{
-			return static_cast<rcu_head_ptr<T> *>(rhp);
+			class rcu_head_ptr<T> *rhp1;
+
+			rhp1 = rhp1->rcu_head_to_rcu_head_ptr(rhp);
+			return rhp1->enclosing_class();
 		}
 
 	private:
