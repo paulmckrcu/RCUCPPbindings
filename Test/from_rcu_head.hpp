@@ -1,5 +1,7 @@
 #include <cstddef>
 
+// container_of() approach.
+
 namespace std {
 	template<typename T>
 	class from_rcu_head {
