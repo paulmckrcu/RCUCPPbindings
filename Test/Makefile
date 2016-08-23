@@ -14,7 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = urcu
+PROGS = urcu from_rcu_head
 GCC_ARGS = -g -std=c++11
 
 all: $(PROGS)
@@ -31,6 +31,9 @@ all: $(PROGS)
 
 urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp
 	g++ $(GCC_ARGS) -o urcu urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal -lurcu-bp -lurcu-mb -lurcu-qsbr
+
+from_rcu_head: from_rcu_head.cpp from_rcu_head.hpp
+	g++ $(GCC_ARGS) -o from_rcu_head from_rcu_head.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 clean:
 	rm -f $(PROGS)
