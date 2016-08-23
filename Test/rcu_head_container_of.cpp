@@ -1,16 +1,16 @@
 #include <iostream>
 #include <unistd.h>
 #include "urcu-signal.hpp"
-#include "from_rcu_head.hpp"
+#include "rcu_head_container_of.hpp"
 
-// container_of() approach, encapsulated into from_rcu_head class.
+// container_of() approach, encapsulated into rcu_head_container_of class.
 
 struct foo {
 	int a;
 	struct std::rcu_head rh;
 };
 
-std::from_rcu_head<struct foo> frh_foo(&foo::rh);
+std::rcu_head_container_of<struct foo> frh_foo(&foo::rh);
 
 void my_cb(struct std::rcu_head *rhp)
 {

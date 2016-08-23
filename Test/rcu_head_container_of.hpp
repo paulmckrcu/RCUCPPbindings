@@ -4,9 +4,9 @@
 
 namespace std {
 	template<typename T>
-	class from_rcu_head {
+	class rcu_head_container_of {
 	public:
-		from_rcu_head(const struct rcu_head T::*rh_field)
+		rcu_head_container_of(const struct rcu_head T::*rh_field)
 		{
 			T t;
 			T *p = &t;
