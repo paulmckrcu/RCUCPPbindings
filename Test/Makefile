@@ -14,7 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = urcu rcu_head_container_of
+PROGS = urcu rcu_head_container_of rcu_head_ptr
 GCC_ARGS = -g -std=c++11
 
 all: $(PROGS)
@@ -34,6 +34,9 @@ urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.
 
 rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
 	g++ $(GCC_ARGS) -o rcu_head_container_of rcu_head_container_of.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+
+rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
+	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 clean:
 	rm -f $(PROGS)

@@ -1,3 +1,4 @@
 urcu
 rcu_head_container_of
+rcu_head_ptr
 *.o
