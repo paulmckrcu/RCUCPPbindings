@@ -14,7 +14,12 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = urcu rcu_head_container_of rcu_head_ptr rcu_head_ptr_lambda
+PROGS = urcu \
+	rcu_head_container_of \
+	rcu_head_ptr \
+	rcu_head_ptr_lambda \
+	rcu_head_lambda_capture
+
 GCC_ARGS = -g -std=c++11
 
 all: $(PROGS)
@@ -40,6 +45,9 @@ rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
 
 rcu_head_ptr_lambda: rcu_head_ptr_lambda.cpp rcu_head_ptr.hpp
 	g++ $(GCC_ARGS) -o rcu_head_ptr_lambda rcu_head_ptr_lambda.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+
+rcu_head_lambda_capture: rcu_head_lambda_capture.cpp
+	g++ $(GCC_ARGS) -o rcu_head_lambda_capture rcu_head_lambda_capture.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 clean:
 	rm -f $(PROGS)
