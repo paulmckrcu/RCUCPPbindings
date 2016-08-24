@@ -28,5 +28,15 @@ int main(int argc, char **argv)
 	std::call_rcu(rhp, my_cb);
 	std::rcu_barrier();
 
+	foo1.a = 43;
+	foo1.rh = &foo1;
+	std::call_rcu(rhp,
+		      [] (struct std::rcu_head *rhp) {
+		      	struct foo *fp = fp->rh.enclosing_class(rhp);
+
+			std::cout << "Callback fp->a: " << fp->a << "\n";
+		      });
+	std::rcu_barrier();
+
 	return 0;
 }
