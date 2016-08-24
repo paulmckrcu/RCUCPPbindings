@@ -1,5 +1,6 @@
 urcu
 rcu_head_container_of
+rcu_head_derived
 rcu_head_ptr
 rcu_head_ptr_lambda
 rcu_head_lambda_capture

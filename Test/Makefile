@@ -16,6 +16,7 @@
 
 PROGS = urcu \
 	rcu_head_container_of \
+	rcu_head_derived \
 	rcu_head_ptr \
 	rcu_head_ptr_lambda \
 	rcu_head_lambda_capture
@@ -39,6 +40,9 @@ urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.
 
 rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
 	g++ $(GCC_ARGS) -o rcu_head_container_of rcu_head_container_of.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+
+rcu_head_derived: rcu_head_derived.cpp rcu_head_derived.hpp
+	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
 	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
