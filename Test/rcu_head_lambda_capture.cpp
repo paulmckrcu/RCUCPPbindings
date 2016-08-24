@@ -4,6 +4,8 @@
 // #include "rcu_head_ptr.hpp"
 
 // Lambda-capture approach -- just ignore RCU's rcu_head pointer!
+// But of limited practical use.
+//	http://stackoverflow.com/questions/7852101/c-lambda-with-captures-as-a-function-pointer
 
 struct foo {
 	int a;
