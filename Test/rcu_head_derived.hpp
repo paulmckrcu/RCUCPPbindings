@@ -24,6 +24,12 @@ namespace std {
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
+		void call(void callback_func(T *obj), class rcu_domain &rd)
+		{
+			this->callback_func = callback_func;
+			rd.call(static_cast<rcu_head *>(this), trampoline);
+		}
+
 	private:
 		void (*callback_func)(T *obj);
 	};

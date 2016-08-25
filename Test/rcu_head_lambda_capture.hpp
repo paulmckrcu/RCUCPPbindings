@@ -19,5 +19,11 @@ namespace std {
 			this->func = func;
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
+
+		void call(std::function<F> func, class rcu_domain &rd)
+		{
+			this->func = func;
+			rd.call(static_cast<rcu_head *>(this), trampoline);
+		}
 	};
 }
