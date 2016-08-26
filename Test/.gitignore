@@ -5,4 +5,5 @@ rcu_head_derived1
 rcu_head_ptr
 rcu_head_ptr_lambda
 rcu_head_lambda_capture
+rcu_scoped_reader
 *.o

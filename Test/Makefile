@@ -18,7 +18,8 @@ PROGS = urcu \
 	rcu_head_container_of \
 	rcu_head_derived \
 	rcu_head_derived1 \
-	rcu_head_ptr
+	rcu_head_ptr \
+	rcu_scoped_reader
 
 GCC_ARGS = -g -std=c++11
 
@@ -48,6 +49,9 @@ rcu_head_derived1: rcu_head_derived1.cpp
 
 rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
 	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+
+rcu_scoped_reader: rcu_scoped_reader.cpp rcu_scoped_reader.hpp
+	g++ $(GCC_ARGS) -o rcu_scoped_reader rcu_scoped_reader.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 # rcu_head_lambda_capture: rcu_head_lambda_capture.cpp rcu_head_lambda_capture.hpp
 #	g++ $(GCC_ARGS) -o rcu_head_lambda_capture rcu_head_lambda_capture.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
