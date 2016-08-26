@@ -6,7 +6,7 @@ namespace std {
 	template<typename T>
 	class rcu_head_container_of {
 	public:
-		rcu_head_container_of(const struct rcu_head T::*rh_field)
+		static void set_field(const struct rcu_head T::*rh_field)
 		{
 			T t;
 			T *p = &t;
@@ -14,7 +14,7 @@ namespace std {
 			rh_offset = ((char *)&(p->*rh_field)) - (char *)p;
 		}
 
-		T *enclosing_class(struct rcu_head *rhp)
+		static T *enclosing_class(struct rcu_head *rhp)
 		{
 			return (T *)((char *)rhp - rh_offset);
 		}
