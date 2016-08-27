@@ -23,6 +23,9 @@ struct foo foo1(42);
 
 int main(int argc, char **argv)
 {
+	struct foo *fp;
+	class std::rcu_signal rs;
+
 	foo1.rh = &foo1;
 	foo1.rh.call(my_cb);
 	std::rcu_barrier();
@@ -33,6 +36,14 @@ int main(int argc, char **argv)
 			std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
 	std::rcu_barrier();
+
+	std::cout << "Deletion with no rcu_domain\n";
+	fp = new foo(44);
+	fp->rh.call();
+
+	std::cout << "Deletion with rcu_signal rcu_domain\n";
+	fp = new foo(45);
+	fp->rh.call(rs);
 
 	return 0;
 }
