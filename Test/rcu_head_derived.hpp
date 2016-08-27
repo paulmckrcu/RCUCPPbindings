@@ -15,7 +15,22 @@ namespace std {
 
 			rhdp = static_cast<rcu_head_derived<T> *>(rhp);
 			obj = static_cast<T *>(rhdp);
-			rhdp->callback_func(obj);
+			if (rhdp->callback_func)
+				rhdp->callback_func(obj);
+			else
+				delete obj;
+		}
+
+		void call()
+		{
+			this->callback_func = nullptr;
+			call_rcu(static_cast<rcu_head *>(this), trampoline);
+		}
+
+		void call(class rcu_domain &rd)
+		{
+			this->callback_func = nullptr;
+			rd.call(static_cast<rcu_head *>(this), trampoline);
 		}
 
 		void call(void callback_func(T *obj))
