@@ -14,10 +14,8 @@ struct foo {
 	class std::rcu_head_ptr<struct foo> rh;
 };
 
-void my_cb(struct std::rcu_head *rhp)
+void my_cb(struct foo *fp)
 {
-	struct foo *fp = fp->rh.enclosing_class(rhp);
-
 	std::cout << "Callback fp->a: " << fp->a << "\n";
 }
 
@@ -26,15 +24,12 @@ struct foo foo1(42);
 int main(int argc, char **argv)
 {
 	foo1.rh = &foo1;
-	std::call_rcu(&foo1.rh, my_cb);
+	foo1.rh.call(my_cb);
 	std::rcu_barrier();
 
 	foo1 = 43;
 	foo1.rh = &foo1;
-	std::call_rcu(&foo1.rh,
-		      [] (struct std::rcu_head *rhp) {
-		      	struct foo *fp = fp->rh.enclosing_class(rhp);
-
+	foo1.rh.call([] (struct foo *fp) {
 			std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
 	std::rcu_barrier();

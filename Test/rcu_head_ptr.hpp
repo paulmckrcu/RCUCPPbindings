@@ -22,20 +22,45 @@ namespace std {
 			return static_cast<rcu_head_ptr<T> *>(rhp);
 		}
 
-		T *enclosing_class()
+		static void trampoline(rcu_head *rhp)
 		{
-			return this->container_ptr;
+			T *obj;
+			rcu_head_ptr<T> *rhdp;
+
+			rhdp = static_cast<rcu_head_ptr<T> *>(rhp);
+			obj = rhdp->container_ptr;
+			if (rhdp->callback_func)
+				rhdp->callback_func(obj);
+			else
+				delete obj;
 		}
 
-		T *enclosing_class(struct rcu_head *rhp)
+		void call()
 		{
-			class rcu_head_ptr<T> *rhp1;
+			this->callback_func = nullptr;
+			call_rcu(static_cast<rcu_head *>(this), trampoline);
+		}
 
-			rhp1 = rhp1->rcu_head_to_rcu_head_ptr(rhp);
-			return rhp1->enclosing_class();
+		void call(class rcu_domain &rd)
+		{
+			this->callback_func = nullptr;
+			rd.call(static_cast<rcu_head *>(this), trampoline);
+		}
+
+		void call(void callback_func(T *obj))
+		{
+			this->callback_func = callback_func;
+			call_rcu(static_cast<rcu_head *>(this), trampoline);
+		}
+
+		void call(void callback_func(T *obj), class rcu_domain &rd)
+		{
+			this->callback_func = callback_func;
+			rd.call(static_cast<rcu_head *>(this), trampoline);
 		}
 
 	private:
+		void (*callback_func)(T *obj);
 		T *container_ptr;
 	};
 }
