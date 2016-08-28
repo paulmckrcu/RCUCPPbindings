@@ -1,0 +1,313 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{epsfig,endnotes}
+%\usepackage{usenix,epsfig}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{subfig}
+\usepackage{fixltx2e}
+\usepackage{url}        % \url{} command with good linebreaks
+\usepackage{amssymb,amsmath}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{listings}
+\usepackage{xspace}
+\usepackage{xcolor}
+\lstset{basicstyle=\ttfamily}
+\usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
+
+% Avoid widows and orphans
+\widowpenalty=500
+\clubpenalty=500
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\lstset{
+	literate={\_}{}{0\discretionary{\_}{}{\_}}%
+}
+\newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
+
+\title{DNNNNR0: Proposed RCU C++ API}
+
+\author{
+{\bf Doc. No.: } WG21/DNNNNR0 \\
+{\bf Date: } 2016-08-24 \\
+{\bf Reply to: } Paul E. McKenney, Maged Michael, and Michael Wong \\
+{\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com, and
+fraggamuffin@gmail.com
+} % end author
+
+% Use the following at camera-ready time to suppress page numbers.
+% Comment it out when you first submit the paper for review.
+%\thispagestyle{empty}
+
+\pagestyle{myheadings}
+\markright{WG21/DNNNNR0}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This document is based on WG21/P0279R1 combined with feedback at
+the 2015 Kona and 2016 Jacksonville meetings, which most notably called
+for a C++-style method of handling different RCU implementations or
+domains within a single translation unit, and which also contains
+useful background material and references.
+Unlike WG21/P0279R1, which simply introduced RCU's C-language practice,
+this document presents proposals for C++-style RCU APIs.
+At present, it appears that these are not conflicting proposals, but
+rather ways of handling different C++ use cases resulting from
+inheritance, templates, and different levels of memory pressure.
+
+Note that this proposal is related to the hazard-pointer proposal in
+that both proposals defer destructive actions such as reclamation until
+all readers have completed.
+
+Note also that a redefinition of the infamous \co{memory_order_consume}
+is the subject of a separate paper.
+% A detailed change log appears starting on
+% page~\pageref{sec:Change Log}.
+
+\section{Introduction}
+\label{sec:Introduction}
+
+This document proposes C++ APIs for read-copy update (RCU).
+
+@@@ roadmap @@@
+
+\section{Base RCU API}
+\label{sec:Base RCU API}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1 void std::rcu_read_lock();
+ 2 void std::rcu_read_unlock();
+ 3 void std::synchronize_rcu();
+ 4 void std::call_rcu(struct std::rcu_head *rhp,
+ 5                    void cbf(class rcu_head *rhp));
+ 6 void std::rcu_barrier();
+ 7 void std::rcu_register_thread();
+ 8 void std::rcu_unregister_thread();
+ 9 void std::rcu_quiescent_state();
+10 void std::rcu_thread_offline();
+11 void std::rcu_thread_online();
+\end{verbatim}
+}
+\caption{Base RCU API}
+\label{fig:Base RCU API}
+\end{figure}
+
+Figure~\ref{fig:Base RCU API}
+shows the base RCU API as provided by implementations such as
+userspace RCU~\cite{MathieuDesnoyers2009URCU,PaulMcKenney2013LWNURCU}.
+This API is provided for compatibility with existing practice as
+well as to provide the highest performance for the
+
+Lines~1 and~2 show \co{rcu_read_lock()} and \co{rcu_read_unlock()},
+which mark the beginning and the end, respectively, of an \emph{RCU read-side
+critical section}.
+These primitives may be nested, and matching \co{rcu_read_lock()}
+and \co{rcu_read_unlock()} calls need not be in the same scope.
+(That said, it is good practice to place them in the same scope
+in cases where the entire critical section fits comfortably into
+one scope.)
+
+Line~3 shows \co{synchronize_rcu()}, which waits for any pre-existing
+RCU read-side critical sections to complete.
+The period of time that \co{synchronize_rcu()} is required to wait is
+called a \emph{grace period}.
+Note that a given call to \co{synchronize_rcu()} is \emph{not} required to
+wait for critical sections that start later.
+
+Lines~4 and~5 show \co{call_rcu()}, which, after a subsequent grace period
+elapses, causes the \co{cbf(rhp)} \emph{RCU callback function} to be invoked.
+Thus, \co{call_rcu()} is the asynchronous counterpart to
+\co{synchronize_rcu()}.
+In most cases, \co{synchronize_rcu()} is easier to use, however, \co{call_rcu()}
+has the benefit of moving the grace-period delay off of the updater's
+critical path.
+Use of \co{call_rcu()} is thus critically important for good performance of
+update-heavy workloads, as has been repeatedly discovered by any number of
+people new to RCU~\cite{PaulEMcKenney2015ReadMostly}.
+
+Note that although \co{call_rcu()}'s callbacks are guaranteed not to be
+invoked too early, there is no guarantee that their execution won't be
+deferred for a considerable time.
+This can be a problem if a given program requires that all outstanding
+RCU callbacks be invoked before that program terminates.
+The \co{rcu_barrier()} function shown on line~6 is intended for this
+situation.
+This function blocks until all callbacks corresponding to previous
+\co{call_rcu()} invocations have been invoked and also until after
+those invocations have returned.
+Therefore, taking the following steps just before terminating a program
+will guarantee that all callbacks have completed:
+
+\begin{enumerate}
+\item	Take whatever steps are required to ensure that there are no
+	further invocations of \co{call_rcu()}.
+\item	Invoke \co{rcu_barrier()}.
+\end{enumerate}
+
+Carrying out this procedure just prior to program termination can be very
+helpful for avoiding false positives when using tools such as valgrind.
+
+Many RCU implementations require that every thread announce itself to
+RCU prior to entering the first RCU read-side critical section, and
+to announce its departure after exiting the last RCU read-side
+critical section.
+These tasks are carried out via the \co{rcu_register_thread()} and
+\co{rcu_unregister_thread()}, respectively.
+
+The implementations of RCU that feature the most aggressive implementations of
+\co{rcu_read_lock()} and \co{rcu_read_unlock()} require that each thread
+periodically pass through a \emph{quiescent state}, which is announce to RCU
+using \co{rcu_quiescent_state()}.
+A thread in a quiescent state is guaranteed not to be in an RCU
+read-side critical section.
+Threads can also announce entry into and exit from \emph{extended
+quiescent states}, for example, before and after blocking system
+calls, using \co{rcu_thread_offline()} and \co{rcu_thread_online()}.
+
+\subsection{RCU Domains}
+\label{sec:RCU Domains}
+
+The userspace RCU library features several RCU implementations, each
+optimized for different use cases.
+
+The quiescent-state based reclamation (QSBR) implementation is intended
+for standalone applications where the developers have full control
+over the entire application, and where extreme read-side performance
+and scalability is required.
+Applications use \co{#include "urcu-qsbr.hpp"} to select QSBR and
+\co{-lurcu -lurcu-qsbr} to link to it.
+These applications must use \co{rcu_register_thread()} and
+\co{rcu_unregister_thread()} to announce the coming and going
+of each thread that is to execute \co{rcu_read_lock()} and
+\co{rcu_read_unlock()}.
+They must also use \co{rcu_quiescent_state()}, \co{rcu_thread_offline()},
+and \co{rcu_thread_online()} to announce quiescent states to RCU.
+
+The memory-barrier implementation is intended for applications that
+can announce threads (again using \co{rcu_register_thread()} and
+\co{rcu_unregister_thread()}), but for which announcing quiescent states is
+impractical.
+Such applications use \co{#include "urcu-mb.hpp"} and
+\co{@@@} to select the memory-barrier implementation.
+Such applications will incur the overhead of a full memory barrier in
+each call to \co{rcu_read_lock()} and \co{rcu_read_unlock()}.
+
+The signal-based implementation represents a midpoint between the QSBR
+and memory-barrier implementations.
+Like the memory-barrier implementation, applications must announce
+threads, but need not announce quiescent states.
+On the one hand, readers are almost as fast as in the QSBR implementation,
+but on the other applications must give up a signal to RCU, by default
+\co{SIGUSR1}.
+Such applications use \co{#include "urcu-signal.hpp"} and
+\co{@@@} to select signal-based RCU.
+
+So-called ``bullet-proof RCU'' avoids the need to announce either threads
+or quiescent states, and is therefore the best choice for use by
+libraries that might well be linked with RCU-oblivious applications.
+The penalty is that \co{rcu_read_lock()} incurs both a memory barrier
+and a test and \co{rcu_read_unlock()} incurs a memory barrier.
+Such applications or libraries use \co{#include urcu-bp.hpp} and
+\co{@@@}.
+
+\subsection{Run-Time Domain Selection}
+\label{sec:Run-Time Domain Selection}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   class rcu_domain {
+ 2   public:
+ 3     virtual void register_thread() = 0;
+ 4     virtual void unregister_thread() = 0;
+ 5     virtual void read_lock() noexcept = 0;
+ 6     virtual void read_unlock() noexcept = 0;
+ 7     virtual void synchronize() noexcept = 0;
+ 8     virtual void call(class rcu_head *rhp,
+ 9           void cbf(class rcu_head *rhp)) = 0;
+10     virtual void barrier() noexcept = 0;
+11     virtual void quiescent_state() noexcept = 0;
+12     virtual void thread_offline() noexcept = 0;
+13     virtual void thread_online() noexcept = 0;
+14   };
+\end{verbatim}
+}
+\caption{RCU Domain Base Class}
+\label{fig:RCU Domain Base Class}
+\end{figure}
+
+Figure~\ref{fig:RCU Domain Base Class}
+shows the abstract base class for runtime selection of RCU domains.
+Each domain creates a concrete subclass that implements its RCU APIs:
+
+\begin{itemize}
+\item	Bullet-proof RCU: \co{class rcu_bp}
+\item	Memory-barrier RCU: \co{class rcu_mb}
+\item	QSBR RCU: \co{class rcu_qsbr}
+\item	Signal-based RCU: \co{class rcu_signal}
+\end{itemize}
+
+\section{Scoped Readers}
+\label{sec:Scoped Readers}
+
+@@@
+
+Question:  Is it reasonable to have a type-oblivious implementation?
+	If not, what the heck am I supposed to do?
+
+Need comparison with hazard pointers.  Start with table in Maged's
+	and my working drafts.  Note different motivations for
+	SRCU-like domains.
+
+@@@
+
+\section{Summary}
+\label{sec:Summary}
+
+This paper reviewed the 2016 discussions of \co{memory_order_consume}
+that took place at the Jacksonville meeting, presented several representative
+use cases, listed evaluation criteria, presented a number of
+marking proposals (two in depth), and provided a comparative
+evaluation.
+
+A combination of typed object modifier (for C compatibility) and
+a template class (for C++), similar to the approach used by atomics.
+For standalone applications, these should be further combined with an
+unmarked option, where the implementation assumes that everything that
+could legally marked is so marked.
+
+%\input{acknowledgments}
+%\input{legal}
+
+%\bibliographystyle{abbrv}
+%\softraggedright
+
+\bibliographystyle{acm}
+\bibliography{bib/RCU,bib/WFS,bib/hw,bib/os,bib/parallelsys,bib/patterns,bib/perfmeas,bib/refs,bib/syncrefs,bib/search,bib/swtools,bib/realtime,bib/TM,bib/standards,bib/maze}
+
+% \section*{Change Log}
+% \label{sec:Change Log}
+
+% This paper first appeared as {\bf N4026} in May of 2014.
+% Revisions to this document are as follows:
+
+% \begin{itemize}
+% \item	Mark the paper as a revision of N4036.
+% 	(July 17, 2014.)
+% \end{itemize}
+
+% At this point, the paper was published as {\bf P0098R1}.
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% for Ispell:
+% LocalWords:  workingdraft BCM ednote SubSections xfig SubSection
+
