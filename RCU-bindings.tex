@@ -313,6 +313,8 @@ to map from the \co{rcu_head} structure to the enclosing struct,
 for example, via the \co{container_of()} macro.
 Of course, this approach also works for C++, but this section first
 looks at some approaches that leverage C++ overloading and inheritance.
+This will not be an either-or situation: Several of these approaches
+are likely to be generally useful.
 
 \subsection{Derived Deletion}
 \label{sec:Derived Deletion}
@@ -400,33 +402,22 @@ of the C++ \co{delete}.
 14         delete obj;
 15     }
 16
-17     void call()
+17     void call(void callback_func(T *obj) = nullptr)
 18     {
-19       this->callback_func = nullptr;
+19       this->callback_func = callback_func;
 20       call_rcu(static_cast<rcu_head *>(this), trampoline);
 21     }
 22
-23     void call(class rcu_domain &rd)
-24     {
-25       this->callback_func = nullptr;
-26       rd.call(static_cast<rcu_head *>(this), trampoline);
-27     }
-28
-29     void call(void callback_func(T *obj))
-30     {
-31       this->callback_func = callback_func;
-32       call_rcu(static_cast<rcu_head *>(this), trampoline);
-33     }
-34
-35     void call(void callback_func(T *obj), class rcu_domain &rd)
-36     {
-37       this->callback_func = callback_func;
-38       rd.call(static_cast<rcu_head *>(this), trampoline);
-39     }
-40
-41   private:
-42     void (*callback_func)(T *obj);
-43   };
+23     void call(class rcu_domain &rd,
+24         void callback_func(T *obj) = nullptr)
+25     {
+26       this->callback_func = callback_func;
+27       rd.call(static_cast<rcu_head *>(this), trampoline);
+28     }
+29
+30   private:
+31     void (*callback_func)(T *obj);
+32   };
 \end{verbatim}
 }
 \caption{RCU Callbacks: Derived Function Call}
@@ -485,34 +476,23 @@ uses less storage, since it need not store a function pointer.
 24         delete obj;
 25     }
 26
-27     void call()
+27     void call(void callback_func(T *obj) = nullptr)
 28     {
-29       this->callback_func = nullptr;
+29       this->callback_func = callback_func;
 30       call_rcu(static_cast<rcu_head *>(this), trampoline);
 31     }
 32
-33     void call(class rcu_domain &rd)
-34     {
-35       this->callback_func = nullptr;
-36       rd.call(static_cast<rcu_head *>(this), trampoline);
-37     }
-38
-39     void call(void callback_func(T *obj))
-40     {
-41       this->callback_func = callback_func;
-42       call_rcu(static_cast<rcu_head *>(this), trampoline);
-43     }
-44
-45     void call(void callback_func(T *obj), class rcu_domain &rd)
-46     {
-47       this->callback_func = callback_func;
-48       rd.call(static_cast<rcu_head *>(this), trampoline);
-49     }
-50
-51   private:
-52     void (*callback_func)(T *obj);
-53     T *container_ptr;
-54   };
+33     void call(class rcu_domain &rd,
+34         void callback_func(T *obj) = nullptr)
+35     {
+36       this->callback_func = callback_func;
+37       rd.call(static_cast<rcu_head *>(this), trampoline);
+38     }
+39
+40   private:
+41     void (*callback_func)(T *obj);
+42     T *container_ptr;
+43   };
 \end{verbatim}
 }
 \caption{RCU Callbacks: Pointer}
@@ -523,6 +503,81 @@ If complex inheritance networks make inheriting from an
 \co{rcu_head} derived type impractical, one alternative is
 to maintain a pointer to the enclosing class as shown in
 Figure~\ref{fig:RCU Callbacks: Pointer}.
+This \co{rcu_head_ptr} class is included as a member of the RCU-protected
+class.
+The \co{rcu_head_ptr} class's pointer must be initialized, for example,
+in the RCU-protected class's constructor.
+
+If the RCU-protected class is \co{foo} and the name of the
+\co{rcu_head_ptr} member function is \co{rh}, then
+\co{foo1.rh.call(my_cb)} would cause the function \co{my_cb()} to be
+invoked after the end of a subsequent grace period.
+As with the previous classes, omitting the function pointer results
+in the object being passed to \co{delete} and an \co{rcu_domain}
+object may be specified.
+
+\subsection{Address Arithmetic}
+\label{sec:Address Arithmetic}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   template<typename T>
+ 2   class rcu_head_container_of {
+ 3   public:
+ 4     static void set_field(const struct rcu_head T::*rh_field)
+ 5     {
+ 6       T t;
+ 7       T *p = &t;
+ 8
+ 9       rh_offset = ((char *)&(p->*rh_field)) - (char *)p;
+10     }
+11
+12     static T *enclosing_class(struct rcu_head *rhp)
+13     {
+14       return (T *)((char *)rhp - rh_offset);
+15     }
+16
+17   private:
+18     static size_t rh_offset;
+19   };
+20
+21   template<typename T>
+22   size_t rcu_head_container_of<T>::rh_offset;
+\end{verbatim}
+}
+\caption{RCU Callbacks: Address Arithmetic}
+\label{fig:RCU Callbacks: Address Arithmetic}
+\end{figure}
+
+Figure~\ref{fig:RCU Callbacks: Address Arithmetic}
+shows an approach that can be used if memory is at a premium and
+the inheritance techniques cannot be used.
+The \co{set_field()} method sets the offset of the
+\co{rcu_head_container_of} member within the enclosing RCU-protected
+structure, and the \co{enclosing_class()} member function
+applies that offset to translate a pointer to the
+\co{rcu_head_container_of} member to the enclosing RCU-protected structure.
+
+\begin{figure*}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1 void my_cb(struct std::rcu_head *rhp)
+ 2 {
+ 3   struct foo *fp;
+ 4
+ 5   fp = std::rcu_head_container_of<struct foo>::enclosing_class(rhp);
+ 6   std::cout << "Callback fp->a: " << fp->a << "\n";
+ 7 }
+\end{verbatim}
+}
+\caption{RCU Callbacks: Address Arithmetic in Callback}
+\label{fig:RCU Callbacks: Address Arithmetic in Callback}
+\end{figure*}
+
+This address arithmetic must be carried out in the callback function,
+as shown in
+Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 
 @@@
 
@@ -538,17 +593,7 @@ Need comparison with hazard pointers.  Start with table in Maged's
 \section{Summary}
 \label{sec:Summary}
 
-This paper reviewed the 2016 discussions of \co{memory_order_consume}
-that took place at the Jacksonville meeting, presented several representative
-use cases, listed evaluation criteria, presented a number of
-marking proposals (two in depth), and provided a comparative
-evaluation.
-
-A combination of typed object modifier (for C compatibility) and
-a template class (for C++), similar to the approach used by atomics.
-For standalone applications, these should be further combined with an
-unmarked option, where the implementation assumes that everything that
-could legally marked is so marked.
+@@@
 
 %\input{acknowledgments}
 %\input{legal}
