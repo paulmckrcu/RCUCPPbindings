@@ -37,11 +37,13 @@ int main(int argc, char **argv)
 	fp = new foo;
 	fp->a = 44;
 	fp->call();
+	std::rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo;
 	fp->a = 44;
 	fp->call(rs);
+	rs.barrier();
 
 	return 0;
 }
