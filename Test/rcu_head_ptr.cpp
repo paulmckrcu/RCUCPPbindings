@@ -41,10 +41,12 @@ int main(int argc, char **argv)
 	std::cout << "Deletion with no rcu_domain\n";
 	fp = new foo(44);
 	fp->rh.call();
+	std::rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo(45);
 	fp->rh.call(rs);
+	rs.barrier();
 
 	return 0;
 }
