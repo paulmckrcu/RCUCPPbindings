@@ -16,12 +16,6 @@ namespace std {
 			this->container_ptr = containing_class;
 		}
 
-		class rcu_head_ptr<T> *
-		rcu_head_to_rcu_head_ptr(struct rcu_head *rhp)
-		{
-			return static_cast<rcu_head_ptr<T> *>(rhp);
-		}
-
 		static void trampoline(rcu_head *rhp)
 		{
 			T *obj;
