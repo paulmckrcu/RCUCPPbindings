@@ -29,25 +29,14 @@ namespace std {
 				delete obj;
 		}
 
-		void call()
-		{
-			this->callback_func = nullptr;
-			call_rcu(static_cast<rcu_head *>(this), trampoline);
-		}
-
-		void call(class rcu_domain &rd)
-		{
-			this->callback_func = nullptr;
-			rd.call(static_cast<rcu_head *>(this), trampoline);
-		}
-
-		void call(void callback_func(T *obj))
+		void call(void callback_func(T *obj) = nullptr)
 		{
 			this->callback_func = callback_func;
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(void callback_func(T *obj), class rcu_domain &rd)
+		void call(class rcu_domain &rd,
+			  void callback_func(T *obj) = nullptr)
 		{
 			this->callback_func = callback_func;
 			rd.call(static_cast<rcu_head *>(this), trampoline);
