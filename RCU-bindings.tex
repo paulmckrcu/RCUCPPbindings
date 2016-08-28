@@ -254,8 +254,275 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 \item	Signal-based RCU: \co{class rcu_signal}
 \end{itemize}
 
+Of course, additional implementations of RCU may be constructed by
+deriving from \co{rcu_domain} and/or by implementing the API
+shown in
+Figure~\ref{fig:Base RCU API}.
+
 \section{Scoped Readers}
 \label{sec:Scoped Readers}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   class rcu_scoped_reader {
+ 2   public:
+ 3     rcu_scoped_reader()
+ 4     {
+ 5       this->rd = nullptr;
+ 6       rcu_read_lock();
+ 7     }
+ 8
+ 9     rcu_scoped_reader(class rcu_domain *rd)
+10     {
+11       this->rd = rd;
+12       rd->read_lock();
+13     }
+14
+15     ~rcu_scoped_reader()
+16     {
+17       if (this->rd)
+18         this->rd->read_unlock();
+19       else
+20         rcu_read_unlock();
+21     }
+22
+23   private:
+24     class rcu_domain *rd;
+25   };
+\end{verbatim}
+}
+\caption{RCU Scoped Readers}
+\label{fig:RCU Scoped Readers}
+\end{figure}
+
+In some cases, it might be convenient to use a scoped style for RCU readers,
+especially if the read-side critical section might be exited via exception.
+The \co{rcu_scoped_reader} class shown in
+Figure~\ref{fig:RCU Scoped Readers}
+may be used for this purpose.
+An argumentless constructor uses the API, or an \co{rcu_domain} class
+may be passed to the constructor to use the specified RCU
+implementation.
+
+\section{RCU Callback Handling}
+\label{sec:RCU Callback Handling}
+
+The traditional C-language RCU callback uses address arithmetic
+to map from the \co{rcu_head} structure to the enclosing struct,
+for example, via the \co{container_of()} macro.
+Of course, this approach also works for C++, but this section first
+looks at some approaches that leverage C++ overloading and inheritance.
+
+\subsection{Derived Deletion}
+\label{sec:Derived Deletion}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   template<typename T>
+ 2   class rcu_head_delete: public rcu_head {
+ 3   public:
+ 4     static void trampoline(rcu_head *rhp)
+ 5     {
+ 6       T *obj;
+ 7       rcu_head_delete<T> *rhdp;
+ 8
+ 9       rhdp = static_cast<rcu_head_delete<T> *>(rhp);
+10       obj = static_cast<T *>(rhdp);
+11       delete obj;
+12     }
+13
+14     void call()
+15     {
+16       call_rcu(static_cast<rcu_head *>(this), trampoline);
+17     }
+18
+19     void call(class rcu_domain &rd)
+20     {
+21       rd.call(static_cast<rcu_head *>(this), trampoline);
+22     }
+23   };
+\end{verbatim}
+}
+\caption{RCU Callbacks: Derived Deletion}
+\label{fig:RCU Callbacks: Derived Deletion}
+\end{figure}
+
+By far the most common RCU callback simply frees the data structure.
+Figure~\ref{fig:RCU Callbacks: Derived Deletion}
+shows the \co{rcu_head_delete} class, which supports this idiom
+in cases where the RCU-protected data structure may inherit
+from this class.
+
+The \co{rcu_head_delete} class supplies a pair of overloaded \co{call()}
+member functions, the of which takes no argument.
+This argument-free member function arranges to \co{delete} the
+object after a grace period, using \co{call_rcu()} to do so.
+
+The second \co{call()} member function takes an \co{rcu_domain}
+argument, and uses that domain's \co{call_rcu()} function to wait
+for a grace period.
+
+Use of this approach is quite straightforward.
+For example, a class \co{foo} would inherit from
+\co{rcu_head_delete<foo>}, and given a \co{foo} pointer \co{fp},
+would execute \co{fp->call()} to cause the object referenced
+by \co{fp} to be passed to \co{delete} at the end of a subsequent
+grace period.
+No further action is required.
+
+However, it is sometimes necessary to do more than simply free an
+object.
+In many cases, additional teardown actions are required, and
+it is often necessary to use a non-standard deallocator instead
+of the C++ \co{delete}.
+
+\subsection{Derived Function Call}
+\label{sec:Derived Function Call}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   template<typename T>
+ 2   class rcu_head_derived: public rcu_head {
+ 3   public:
+ 4     static void trampoline(rcu_head *rhp)
+ 5     {
+ 6       T *obj;
+ 7       rcu_head_derived<T> *rhdp;
+ 8
+ 9       rhdp = static_cast<rcu_head_derived<T> *>(rhp);
+10       obj = static_cast<T *>(rhdp);
+11       if (rhdp->callback_func)
+12         rhdp->callback_func(obj);
+13       else
+14         delete obj;
+15     }
+16
+17     void call()
+18     {
+19       this->callback_func = nullptr;
+20       call_rcu(static_cast<rcu_head *>(this), trampoline);
+21     }
+22
+23     void call(class rcu_domain &rd)
+24     {
+25       this->callback_func = nullptr;
+26       rd.call(static_cast<rcu_head *>(this), trampoline);
+27     }
+28
+29     void call(void callback_func(T *obj))
+30     {
+31       this->callback_func = callback_func;
+32       call_rcu(static_cast<rcu_head *>(this), trampoline);
+33     }
+34
+35     void call(void callback_func(T *obj), class rcu_domain &rd)
+36     {
+37       this->callback_func = callback_func;
+38       rd.call(static_cast<rcu_head *>(this), trampoline);
+39     }
+40
+41   private:
+42     void (*callback_func)(T *obj);
+43   };
+\end{verbatim}
+}
+\caption{RCU Callbacks: Derived Function Call}
+\label{fig:RCU Callbacks: Derived Function Call}
+\end{figure}
+
+The \co{rcu_head_derived} class provides four \co{call()} methods,
+as shown in
+Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
+These methods take a function pointer or not and take an
+\co{rcu_domain} class or not.
+If supplied, the function is invoked after a grace period,
+otherwise the object is handed to \co{delete}.
+A supplied function might carry out teardown actions before freeing
+the object, or it might be the deallocation function from a
+specialized memory allocator.
+A lambda may of course be supplied, but lambda capture is not supported.
+
+If an \co{rcu_domain} is supplied, its \co{call_rcu()}
+member function is used, otherwise the \co{call_rcu()} free
+function is used.
+
+Of course, the action of \co{rcu_head_delete} can be emulated by
+omitting the function pointer, but in that case \co{rcu_head_delete}
+uses less storage, since it need not store a function pointer.
+
+\subsection{Pointer To Enclosing Class}
+\label{sec:Pointer To Enclosing Class}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   template<typename T>
+ 2   class rcu_head_ptr: public rcu_head {
+ 3   public:
+ 4     rcu_head_ptr()
+ 5     {
+ 6       this->container_ptr = NULL;
+ 7     }
+ 8
+ 9     rcu_head_ptr(T *containing_class)
+10     {
+11       this->container_ptr = containing_class;
+12     }
+13
+14     static void trampoline(rcu_head *rhp)
+15     {
+16       T *obj;
+17       rcu_head_ptr<T> *rhdp;
+18
+19       rhdp = static_cast<rcu_head_ptr<T> *>(rhp);
+20       obj = rhdp->container_ptr;
+21       if (rhdp->callback_func)
+22         rhdp->callback_func(obj);
+23       else
+24         delete obj;
+25     }
+26
+27     void call()
+28     {
+29       this->callback_func = nullptr;
+30       call_rcu(static_cast<rcu_head *>(this), trampoline);
+31     }
+32
+33     void call(class rcu_domain &rd)
+34     {
+35       this->callback_func = nullptr;
+36       rd.call(static_cast<rcu_head *>(this), trampoline);
+37     }
+38
+39     void call(void callback_func(T *obj))
+40     {
+41       this->callback_func = callback_func;
+42       call_rcu(static_cast<rcu_head *>(this), trampoline);
+43     }
+44
+45     void call(void callback_func(T *obj), class rcu_domain &rd)
+46     {
+47       this->callback_func = callback_func;
+48       rd.call(static_cast<rcu_head *>(this), trampoline);
+49     }
+50
+51   private:
+52     void (*callback_func)(T *obj);
+53     T *container_ptr;
+54   };
+\end{verbatim}
+}
+\caption{RCU Callbacks: Pointer}
+\label{fig:RCU Callbacks: Pointer}
+\end{figure}
+
+If complex inheritance networks make inheriting from an
+\co{rcu_head} derived type impractical, one alternative is
+to maintain a pointer to the enclosing class as shown in
+Figure~\ref{fig:RCU Callbacks: Pointer}.
 
 @@@
 
