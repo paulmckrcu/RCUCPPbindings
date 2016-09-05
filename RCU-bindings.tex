@@ -279,17 +279,19 @@ Figure~\ref{fig:Base RCU API}.
 12       rd->read_lock();
 13     }
 14
-15     ~rcu_scoped_reader()
-16     {
-17       if (this->rd)
-18         this->rd->read_unlock();
-19       else
-20         rcu_read_unlock();
-21     }
-22
-23   private:
-24     class rcu_domain *rd;
-25   };
+15     rcu_scoped_reader(const rcu_scoped_reader &) = delete;
+16
+17     ~rcu_scoped_reader()
+18     {
+19       if (this->rd)
+20         this->rd->read_unlock();
+21       else
+22         rcu_read_unlock();
+23     }
+24
+25   private:
+26     class rcu_domain *rd;
+27   };
 \end{verbatim}
 }
 \caption{RCU Scoped Readers}

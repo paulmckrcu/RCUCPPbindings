@@ -13,6 +13,10 @@ namespace std {
 			rd->read_lock();
 		}
 
+		rcu_scoped_reader(const rcu_scoped_reader &) = delete;
+		
+		rcu_scoped_reader&operator=(const rcu_scoped_reader &) = delete;
+
 		~rcu_scoped_reader()
 		{
 			if (this->rd)
