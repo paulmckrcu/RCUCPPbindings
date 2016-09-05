@@ -8,7 +8,7 @@ namespace std {
 	public:
 		rcu_head_ptr()
 		{
-			this->container_ptr = NULL;
+			this->container_ptr = nullptr;
 		}
 
 		rcu_head_ptr(T *containing_class)

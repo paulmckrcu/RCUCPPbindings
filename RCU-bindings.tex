@@ -457,7 +457,7 @@ uses less storage, since it need not store a function pointer.
  3   public:
  4     rcu_head_ptr()
  5     {
- 6       this->container_ptr = NULL;
+ 6       this->container_ptr = nullptr;
  7     }
  8
  9     rcu_head_ptr(T *containing_class)
