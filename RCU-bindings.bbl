@@ -15,4 +15,12 @@
 \newblock User-space {RCU}.
 \newblock \url{https://lwn.net/Articles/573424/}, November 2013.
 
+\bibitem{PaulEMcKennneyToolKitP0232R0}
+{\sc McKenney, P.~E., Wong, M., and Michael, M.}
+\newblock P0232r0: A concurrency toolkit for structured deferral or optimistic
+  speculation.
+\newblock
+  \url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0232r0.pdf},
+  February 2016.
+
 \end{thebibliography}
