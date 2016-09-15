@@ -11,7 +11,7 @@
 \usepackage{enumerate}
 \usepackage{listings}
 \usepackage{xspace}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \lstset{basicstyle=\ttfamily}
 \usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
 
@@ -581,21 +581,98 @@ This address arithmetic must be carried out in the callback function,
 as shown in
 Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 
-@@@
+\section{Hazard Pointers and RCU: Which to Use?}
+\label{sec:Hazard Pointers and RCU: Which to Use?}
 
-Question:  Is it reasonable to have a type-oblivious implementation?
-	If not, what the heck am I supposed to do?
+\begin{table*}
+\small
+\centering
+\begin{tabular}{l|p{1.5in}|p{1.5in}|p{1.5in}}
+	& Reference Counting & RCU & Hazard Pointers \\
+	\hline
+	\hline
+	Unreclaimed objects
+		& \cellcolor{green!30}{\bf Bounded}
+			& Unbounded
+				& \cellcolor{green!30}{\bf Bounded} \\
+	\hline
+	Traversal forward progress
+		& \cellcolor{green!30}{\bf Lock-free}
+			& \cellcolor{blue!20}
+			  {\bf Bounded population oblivious wait-free}
+				& \cellcolor{green!30}{\bf Lock-free} \\
+	\hline
+	Reclamation forward progress $^*$
+		& \cellcolor{blue!20}{\bf Bounded wait-free}
+			& Blocking
+				& \cellcolor{blue!20}{\bf Bounded wait-free} \\
+	\hline
+	Contention among readers
+		& Can be very high
+			& \cellcolor{green!30}{\bf No contention}
+				& \cellcolor{green!30}{\bf No contention} \\
+	\hline
+	Traversal speed
+		& Atomic read-modify-write updates
+			& \cellcolor{green!30}{\bf No or low overhead}
+				& Store-load fence \\
+	\hline
+	Reference acquisition
+		& Conditional
+			& \cellcolor{green!30}{\bf Unconditional}
+				& Conditional \\
+	\hline
+	Automatic reclamation
+		& \cellcolor{green!30}{\bf Yes}
+			& No
+				& No \\
+	\hline
+	Purpose of domains
+		& N/A
+			& Isolate long-latency readers
+				& Enable type safety \\
+\end{tabular}
+\caption{Comparison of Deferred-Reclamation Mechanisms}
+\label{tab:Comparison of Deferred-Reclamation Mechanisms}
 
-Need comparison with hazard pointers.  Start with table in Maged's
-	and my working drafts.  Note different motivations for
-	SRCU-like domains.
+\flushleft
+\noindent
+*~~Does not include memory allocator, just the reclamation itself.
+\end{table*}
 
-@@@
+Table~\ref{tab:Comparison of Deferred-Reclamation Mechanisms}
+provides a rough summary of the relative advantages of reference
+counting, RCU, and hazard pointers.
+Advantages are marked in bold with green background, or with a blue
+background for strong advantages.
+
+As a rough rule of thumb, for best performance and scalability, you
+should use RCU for read-intensive workloads and hazard pointers for
+workloads that have significant update rates.
+As another rough rule of thumb, a significant update rate has updates
+as part of more than 10\% of its operations.
+
+Specialized workloads will have other considerations.
+For example, small-memory multiprocessor systems might be best-served by
+hazard pointers, while the read-mostly data structures in real-time
+systems might be best-served by RCU.
 
 \section{Summary}
 \label{sec:Summary}
 
-@@@
+This paper demonstrates a way of creating C++ bindings for a C-language
+RCU implementation, which has been tested against the userspace RCU
+library.
+We believe that these bindings are also appropriate for the type-oblivious
+C++ RCU implementations that information-hiding considerations are likely
+to favor.
+
+\section*{Acknowledgments}
+
+We owe thanks to Pedro Ramalhete for his review of P0232R0, which
+greatly improved
+Table~\ref{tab:Comparison of Deferred-Reclamation Mechanisms}.
+We are grateful to Jim Wasko for his support of this effort.
 
 %\input{acknowledgments}
 %\input{legal}
