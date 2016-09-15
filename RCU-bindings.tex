@@ -75,6 +75,7 @@ is the subject of a separate paper.
 \label{sec:Introduction}
 
 This document proposes C++ APIs for read-copy update (RCU).
+For more information on RCU, including RCU semantics, see @@@.
 
 @@@ roadmap @@@
 
@@ -308,6 +309,9 @@ may be used for this purpose.
 An argumentless constructor uses the API, or an \co{rcu_domain} class
 may be passed to the constructor to use the specified RCU
 implementation.
+
+This is intended to be used in a manner similar to
+\co{std::lock_guard}.
 
 \section{RCU Callback Handling}
 \label{sec:RCU Callback Handling}
@@ -671,9 +675,7 @@ to favor.
 
 \section*{Acknowledgments}
 
-We owe thanks to Pedro Ramalhete for his review of P0232R0, which
-greatly improved
-Table~\ref{tab:Comparison of Deferred-Reclamation Mechanisms}.
+We owe thanks to Pedro Ramalhete for his review and comments.
 We are grateful to Jim Wasko for his support of this effort.
 
 %\input{acknowledgments}
