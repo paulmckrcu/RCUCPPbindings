@@ -603,13 +603,13 @@ Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 				& \cellcolor{green!30}{\bf Bounded} \\
 	\hline
 	Traversal forward progress
-		& \cellcolor{green!30}{\bf Lock-free}
+		& Either blocking or lock-free with limited reclamation
 			& \cellcolor{blue!20}
 			  {\bf Bounded population oblivious wait-free}
 				& \cellcolor{green!30}{\bf Lock-free} \\
 	\hline
 	Reclamation forward progress $^*$
-		& \cellcolor{blue!20}{\bf Bounded wait-free}
+		& Either blocking or lock-free with limited reclamation
 			& Blocking
 				& \cellcolor{blue!20}{\bf Bounded wait-free} \\
 	\hline
@@ -636,7 +636,8 @@ Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 	Purpose of domains
 		& N/A
 			& Isolate long-latency readers
-				& Enable type safety \\
+				& Limit contention, reduce space
+				  bounds, etc.  \\
 \end{tabular}
 \caption{Comparison of Deferred-Reclamation Mechanisms}
 \label{tab:Comparison of Deferred-Reclamation Mechanisms}
