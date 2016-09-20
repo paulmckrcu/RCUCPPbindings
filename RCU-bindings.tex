@@ -593,51 +593,68 @@ Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 \begin{table*}
 \small
 \centering
-\begin{tabular}{l|p{1.5in}|p{1.5in}|p{1.5in}}
-	& Reference Counting & RCU & Hazard Pointers \\
+\begin{tabular}{p{1.2in}|p{1.2in}|p{1.2in}|p{1.2in}|p{1.2in}}
+	& Reference Counting
+		& \raggedright Reference Counting with DCAS
+			& RCU
+				& Hazard Pointers \\
 	\hline
 	\hline
 	Unreclaimed objects
 		& \cellcolor{green!30}{\bf Bounded}
-			& Unbounded
-				& \cellcolor{green!30}{\bf Bounded} \\
+			& \cellcolor{green!30}{\bf Bounded}
+				& Unbounded
+					& \cellcolor{green!30}{\bf Bounded} \\
 	\hline
-	Traversal forward progress
-		& Either blocking or lock-free with limited reclamation
-			& \cellcolor{blue!20}
-			  {\bf Bounded population oblivious wait-free}
-				& \cellcolor{green!30}{\bf Lock-free} \\
-	\hline
-	Reclamation forward progress $^*$
-		& Either blocking or lock-free with limited reclamation
-			& Blocking
-				& \cellcolor{blue!20}{\bf Bounded wait-free} \\
-	\hline
+	\raggedright
 	Contention among readers
 		& Can be very high
-			& \cellcolor{green!30}{\bf No contention}
-				& \cellcolor{green!30}{\bf No contention} \\
+			& Can be very high
+				& \cellcolor{green!30}{\bf No contention}
+					& \cellcolor{green!30}
+					  {\bf No contention} \\
+	\hline
+	\raggedright
+	Traversal forward progress
+		& Either blocking or lock-free with limited reclamation
+			& \cellcolor{green!30} {\bf Lock free}
+				& \cellcolor{blue!20}
+				  {\bf Bounded population oblivious wait-free}
+					& \cellcolor{green!30}{\bf Lock-free} \\
+	\hline
+	\raggedright
+	Reclamation forward progress $^*$
+		& Either blocking or lock-free with limited reclamation
+			& \cellcolor{green!30} {\bf Lock free}
+				& Blocking
+					& \cellcolor{blue!20}
+					  {\bf Bounded wait-free} \\
 	\hline
 	Traversal speed
 		& Atomic read-modify-write updates
-			& \cellcolor{green!30}{\bf No or low overhead}
-				& Store-load fence \\
+			& Atomic read-modify-write updates
+				& \cellcolor{green!30}{\bf No or low overhead}
+					& Store-load fence \\
 	\hline
 	Reference acquisition
-		& Conditional
+		& \cellcolor{green!30}{\bf Unconditional}
 			& \cellcolor{green!30}{\bf Unconditional}
-				& Conditional \\
+				& \cellcolor{green!30}{\bf Unconditional}
+					& Conditional \\
 	\hline
+	\raggedright
 	Automatic reclamation
 		& \cellcolor{green!30}{\bf Yes}
-			& No
-				& No \\
+			& \cellcolor{green!30}{\bf Yes}
+				& No
+					& No \\
 	\hline
 	Purpose of domains
 		& N/A
-			& Isolate long-latency readers
-				& Limit contention, reduce space
-				  bounds, etc.  \\
+			& N/A
+				& Isolate long-latency readers
+					& Limit contention, reduce space
+					  bounds, etc.  \\
 \end{tabular}
 \caption{Comparison of Deferred-Reclamation Mechanisms}
 \label{tab:Comparison of Deferred-Reclamation Mechanisms}
@@ -653,11 +670,22 @@ counting, RCU, and hazard pointers.
 Advantages are marked in bold with green background, or with a blue
 background for strong advantages.
 
+Although reference counting has normally had quite limited capabilities
+and been quite tricky to apply for general linked data-structure
+traversal, given a double-pointer-width compare-and-swap instruction,
+it can work quite well, as shown in the ``Reference Counting with DCAS''
+column.
+
 As a rough rule of thumb, for best performance and scalability, you
 should use RCU for read-intensive workloads and hazard pointers for
 workloads that have significant update rates.
 As another rough rule of thumb, a significant update rate has updates
 as part of more than 10\% of its operations.
+Reference counting with DCAS is well-suited for small systems and/or
+low read-side contention, and particularly on systems that have limited
+thread-local-storage capabilities.
+Both RCU and reference counting with DCAS allow unconditional reference
+acquisition
 
 Specialized workloads will have other considerations.
 For example, small-memory multiprocessor systems might be best-served by
