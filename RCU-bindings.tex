@@ -226,20 +226,22 @@ Such applications or libraries use \co{#include urcu-bp.hpp} and
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   class rcu_domain {
- 2   public:
- 3     virtual void register_thread() = 0;
- 4     virtual void unregister_thread() = 0;
- 5     virtual void read_lock() noexcept = 0;
- 6     virtual void read_unlock() noexcept = 0;
- 7     virtual void synchronize() noexcept = 0;
- 8     virtual void call(class rcu_head *rhp,
- 9           void cbf(class rcu_head *rhp)) = 0;
-10     virtual void barrier() noexcept = 0;
-11     virtual void quiescent_state() noexcept = 0;
-12     virtual void thread_offline() noexcept = 0;
-13     virtual void thread_online() noexcept = 0;
-14   };
+ 1 class rcu_domain {
+ 2 public:
+ 3   virtual void register_thread() = 0;
+ 4   virtual void unregister_thread() = 0;
+ 5   static inline bool register_thread_needed()
+ 6           { return true; }
+ 7   virtual void read_lock() noexcept = 0;
+ 8   virtual void read_unlock() noexcept = 0;
+ 9   virtual void synchronize() noexcept = 0;
+10   virtual void call(class rcu_head *rhp,
+11         void cbf(class rcu_head *rhp)) = 0;
+12   virtual void barrier() noexcept = 0;
+13   virtual void quiescent_state() noexcept = 0;
+14   virtual void thread_offline() noexcept = 0;
+15   virtual void thread_online() noexcept = 0;
+16 };
 \end{verbatim}
 }
 \caption{RCU Domain Base Class}

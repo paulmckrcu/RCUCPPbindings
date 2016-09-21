@@ -3,6 +3,7 @@ namespace std {
 	public:
 		virtual void register_thread() = 0;
 		virtual void unregister_thread() = 0;
+		static inline bool register_thread_needed() { return true; }
 		virtual void read_lock() noexcept = 0;
 		virtual void read_unlock() noexcept = 0;
 		virtual void synchronize() noexcept = 0;

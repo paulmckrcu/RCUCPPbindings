@@ -5,5 +5,6 @@ namespace std {
 
 	class rcu_bp: public rcu_domain {
 #include "rcu_domain_derived.hpp"
+		static inline bool register_thread_needed() { return false; }
 	};
 }
