@@ -14,6 +14,8 @@ int main(int argc, char **argv)
 	struct foo *fp = new struct foo;
 	class std::rcu_signal rs;
 
+	printf("%zu %zu %zu\n", sizeof(std::rcu_head), sizeof(std::rcu_head_delete<foo>), sizeof(foo));
+
 	// First with a normal function.
 	fp->a = 42;
 	fp->call();

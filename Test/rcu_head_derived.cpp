@@ -21,6 +21,8 @@ int main(int argc, char **argv)
 	struct foo *fp;
 	class std::rcu_signal rs;
 
+	printf("%zu %zu %zu\n", sizeof(std::rcu_head), sizeof(std::rcu_head_delete<foo, void(*)(foo*)>), sizeof(foo));
+
 	// First with a normal function.
 	foo1.a = 42;
 	foo1.call(my_cb);
