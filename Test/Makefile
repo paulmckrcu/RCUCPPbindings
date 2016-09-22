@@ -17,6 +17,7 @@
 PROGS = urcu \
 	rcu_head_container_of \
 	rcu_head_delete \
+	rcu_head_delete2 \
 	rcu_head_derived \
 	rcu_head_derived1 \
 	rcu_head_ptr \
@@ -44,6 +45,9 @@ rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
 
 rcu_head_delete: rcu_head_delete.cpp rcu_head_delete.hpp
 	g++ $(GCC_ARGS) -o rcu_head_delete rcu_head_delete.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+
+rcu_head_delete2: rcu_head_delete2.cpp rcu_head_delete2.hpp
+	g++ $(GCC_ARGS) -o rcu_head_delete2 rcu_head_delete2.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
 
 rcu_head_derived: rcu_head_derived.cpp rcu_head_derived.hpp
 	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
