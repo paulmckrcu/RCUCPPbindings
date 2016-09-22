@@ -38,31 +38,31 @@ all: $(PROGS)
 #	 Verify by using the nm command and searching output for malloc.
 
 urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp
-	g++ $(GCC_ARGS) -o urcu urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal -lurcu-bp -lurcu-mb -lurcu-qsbr
+	g++ $(GCC_ARGS) -o urcu urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp -lpthread -lurcu -lurcu-signal -lurcu-bp -lurcu-mb -lurcu-qsbr
 
 rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
-	g++ $(GCC_ARGS) -o rcu_head_container_of rcu_head_container_of.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_container_of rcu_head_container_of.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_delete: rcu_head_delete.cpp rcu_head_delete.hpp
-	g++ $(GCC_ARGS) -o rcu_head_delete rcu_head_delete.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_delete rcu_head_delete.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_delete2: rcu_head_delete2.cpp rcu_head_delete2.hpp
-	g++ $(GCC_ARGS) -o rcu_head_delete2 rcu_head_delete2.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_delete2 rcu_head_delete2.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_derived: rcu_head_derived.cpp rcu_head_derived.hpp
-	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_derived1: rcu_head_derived1.cpp
-	g++ $(GCC_ARGS) -o rcu_head_derived1 rcu_head_derived1.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_derived1 rcu_head_derived1.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
-	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_scoped_reader: rcu_scoped_reader.cpp rcu_scoped_reader.hpp
-	g++ $(GCC_ARGS) -o rcu_scoped_reader rcu_scoped_reader.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+	g++ $(GCC_ARGS) -o rcu_scoped_reader rcu_scoped_reader.cpp -lpthread -lurcu -lurcu-signal
 
 # rcu_head_lambda_capture: rcu_head_lambda_capture.cpp rcu_head_lambda_capture.hpp
-#	g++ $(GCC_ARGS) -o rcu_head_lambda_capture rcu_head_lambda_capture.cpp -I/home/git/userspace-rcu -L/home/git/userspace-rcu/.libs -Wl,--rpath,/home/git/userspace-rcu/.libs -lpthread -lurcu -lurcu-signal
+#	g++ $(GCC_ARGS) -o rcu_head_lambda_capture rcu_head_lambda_capture.cpp -lpthread -lurcu -lurcu-signal
 
 clean:
 	rm -f $(PROGS)
