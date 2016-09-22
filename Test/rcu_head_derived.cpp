@@ -1,11 +1,11 @@
 #include <iostream>
 #include <unistd.h>
 #include "urcu-signal.hpp"
-#include "rcu_head_derived.hpp"
+#include "rcu_head_delete.hpp"
 
 // Derived-type approach.
 
-struct foo: public std::rcu_head_derived<foo> {
+struct foo: public std::rcu_head_delete<foo, void(*)(foo*)> {
 	int a;
 };
 

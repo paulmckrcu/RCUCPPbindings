@@ -49,7 +49,7 @@ rcu_head_delete: rcu_head_delete.cpp rcu_head_delete.hpp
 rcu_head_delete2: rcu_head_delete2.cpp rcu_head_delete2.hpp
 	g++ $(GCC_ARGS) -o rcu_head_delete2 rcu_head_delete2.cpp -lpthread -lurcu -lurcu-signal
 
-rcu_head_derived: rcu_head_derived.cpp rcu_head_derived.hpp
+rcu_head_derived: rcu_head_derived.cpp rcu_head_delete.hpp
 	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_head_derived1: rcu_head_derived1.cpp
