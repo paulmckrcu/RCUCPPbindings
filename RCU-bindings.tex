@@ -33,9 +33,11 @@
 \author{
 {\bf Doc. No.: } WG21/DNNNNR0 \\
 {\bf Date: } 2016-08-24 \\
-{\bf Reply to: } Paul E. McKenney, Maged Michael, and Michael Wong \\
-{\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com, and
-fraggamuffin@gmail.com
+{\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
+Isabella Muerte, and Arthur O'Dwyer\\
+{\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com,
+fraggamuffin@gmail.com,\\
+izzy@mnmlstc.com, and arthur.j.odwyer@gmail.com
 } % end author
 
 % Use the following at camera-ready time to suppress page numbers.
@@ -332,29 +334,26 @@ are likely to be generally useful.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   template<typename T>
- 2   class rcu_head_delete: public rcu_head {
+ 1   template<typename T, typename D>
+ 2   class rcu_head_delete<T,D,true>: private rcu_head {
  3   public:
  4     static void trampoline(rcu_head *rhp)
  5     {
- 6       T *obj;
- 7       rcu_head_delete<T> *rhdp;
- 8
- 9       rhdp = static_cast<rcu_head_delete<T> *>(rhp);
-10       obj = static_cast<T *>(rhdp);
-11       delete obj;
-12     }
-13
-14     void call()
-15     {
-16       call_rcu(static_cast<rcu_head *>(this), trampoline);
-17     }
-18
-19     void call(class rcu_domain &rd)
-20     {
-21       rd.call(static_cast<rcu_head *>(this), trampoline);
-22     }
-23   };
+ 6       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+ 7       auto obj = static_cast<T *>(rhdp);
+ 8       D()(obj);
+ 9     }
+10
+11     void call(D d = {})
+12     {
+13       call_rcu(static_cast<rcu_head *>(this), trampoline);
+14     }
+15
+16     void call(rcu_domain &rd, D d = {})
+17     {
+18       rd.call(static_cast<rcu_head *>(this), trampoline);
+19     }
+20   };
 \end{verbatim}
 }
 \caption{RCU Callbacks: Derived Deletion}
@@ -363,12 +362,12 @@ are likely to be generally useful.
 
 By far the most common RCU callback simply frees the data structure.
 Figure~\ref{fig:RCU Callbacks: Derived Deletion}
-shows the \co{rcu_head_delete} class, which supports this idiom
-in cases where the RCU-protected data structure may inherit
+shows a specialization of the \co{rcu_head_delete} class, which supports
+this idiom in cases where the RCU-protected data structure may inherit
 from this class.
 
 The \co{rcu_head_delete} class supplies a pair of overloaded \co{call()}
-member functions, the of which takes no argument.
+member functions, the first of which has no non-defaulted argument.
 This argument-free member function arranges to \co{delete} the
 object after a grace period, using \co{call_rcu()} to do so.
 
@@ -389,6 +388,8 @@ object.
 In many cases, additional teardown actions are required, and
 it is often necessary to use a non-standard deallocator instead
 of the C++ \co{delete}.
+This possibility is covered by another specialization of the
+\co{rcu_head_deleter} class, which is described in the next section.
 
 \subsection{Derived Function Call}
 \label{sec:Derived Function Call}
@@ -396,38 +397,31 @@ of the C++ \co{delete}.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   template<typename T>
- 2   class rcu_head_derived: public rcu_head {
- 3   public:
- 4     static void trampoline(rcu_head *rhp)
- 5     {
- 6       T *obj;
- 7       rcu_head_derived<T> *rhdp;
- 8
- 9       rhdp = static_cast<rcu_head_derived<T> *>(rhp);
-10       obj = static_cast<T *>(rhdp);
-11       if (rhdp->callback_func)
-12         rhdp->callback_func(obj);
-13       else
-14         delete obj;
-15     }
-16
-17     void call(void callback_func(T *obj) = nullptr)
-18     {
-19       this->callback_func = callback_func;
-20       call_rcu(static_cast<rcu_head *>(this), trampoline);
-21     }
-22
-23     void call(class rcu_domain &rd,
-24         void callback_func(T *obj) = nullptr)
-25     {
-26       this->callback_func = callback_func;
-27       rd.call(static_cast<rcu_head *>(this), trampoline);
-28     }
-29
-30   private:
-31     void (*callback_func)(T *obj);
-32   };
+ 1   template<typename T, typename D = default_delete<T>,
+ 2     bool E = is_empty<D>::value>
+ 3   class rcu_head_delete: private rcu_head {
+ 4     D deleter;
+ 5   public:
+ 6     static void trampoline(rcu_head *rhp)
+ 7     {
+ 8       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+ 9       auto obj = static_cast<T *>(rhdp);
+10       rhdp->deleter(obj);
+11     }
+12
+13     void call(D d = {})
+14     {
+15       deleter = d;
+16       call_rcu(static_cast<rcu_head *>(this), trampoline);
+17     }
+18
+19     void call(rcu_domain &rd, D d = {})
+20     {
+21       deleter = d;
+22       rd.call(static_cast<rcu_head *>(this), trampoline);
+23     }
+24   };
+25
 \end{verbatim}
 }
 \caption{RCU Callbacks: Derived Function Call}
@@ -440,7 +434,8 @@ Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
 These methods take a function pointer or not and take an
 \co{rcu_domain} class or not.
 If supplied, the function is invoked after a grace period,
-otherwise the object is handed to \co{delete}.
+otherwise the object is handed to \co{delete}, courtesy of the default
+for the \co{d} parameters to the \co{call()} member functions.
 A supplied function might carry out teardown actions before freeing
 the object, or it might be the deallocation function from a
 specialized memory allocator.
