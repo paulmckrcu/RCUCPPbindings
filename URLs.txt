@@ -7,3 +7,7 @@ http://en.cppreference.com/w/cpp/memory/shared_ptr
 
 	As above, but also allows compiler version to be specified
 	as well.
+
+http://melpon.org/wandbox
+
+	As above, but all sorts of compiler/library combinations
