@@ -32,7 +32,7 @@
 
 \author{
 {\bf Doc. No.: } WG21/P0461R0 \\
-{\bf Date: } 2016-08-24 \\
+{\bf Date: } 2016-10-13 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, and Arthur O'Dwyer\\
 {\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com,
@@ -77,9 +77,20 @@ is the subject of a separate paper.
 \label{sec:Introduction}
 
 This document proposes C++ APIs for read-copy update (RCU).
-For more information on RCU, including RCU semantics, see @@@.
+For more information on RCU, including RCU semantics, see
+WG21/P0462R0 (``Marking \co{memory_order_consume} Dependency Chains''),
+WG21/P0279R1 (``Read-Copy Update (RCU) for C++''),
+WG21/P0190R2 (``Proposal for New \co{memory_order_consume} Definition''),
+and
+WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 
-@@@ roadmap @@@
+Section~\ref{sec:Base RCU API} presents the base (C-style) RCU API,
+Section~\ref{sec:Scoped Readers} presents a proposal for scoped RCU readers,
+Section~\ref{sec:RCU Callback Handling} presents proposals for handling of
+RCU callbacks,
+Section~\ref{sec:Hazard Pointers and RCU: Which to Use?} presents a
+table comparing reference counting, hazard pointers, and RCU, and finally
+Section~\ref{sec:Summary} presents a summary.
 
 \section{Base RCU API}
 \label{sec:Base RCU API}
@@ -108,7 +119,9 @@ Figure~\ref{fig:Base RCU API}
 shows the base RCU API as provided by implementations such as
 userspace RCU~\cite{MathieuDesnoyers2009URCU,PaulMcKenney2013LWNURCU}.
 This API is provided for compatibility with existing practice as
-well as to provide the highest performance for the
+well as to provide the highest performance for fast-path code.
+(See Figure~\ref{fig:RCU Domain Base Class} for a proposed API that
+permits multiple RCU domains, as requested by several committee members.)
 
 Lines~1 and~2 show \co{rcu_read_lock()} and \co{rcu_read_unlock()},
 which mark the beginning and the end, respectively, of an \emph{RCU read-side
@@ -200,7 +213,7 @@ can announce threads (again using \co{rcu_register_thread()} and
 \co{rcu_unregister_thread()}), but for which announcing quiescent states is
 impractical.
 Such applications use \co{#include "urcu-mb.hpp"} and
-\co{@@@} to select the memory-barrier implementation.
+\co{-lurcu-mb} to select the memory-barrier implementation.
 Such applications will incur the overhead of a full memory barrier in
 each call to \co{rcu_read_lock()} and \co{rcu_read_unlock()}.
 
@@ -212,7 +225,7 @@ On the one hand, readers are almost as fast as in the QSBR implementation,
 but on the other applications must give up a signal to RCU, by default
 \co{SIGUSR1}.
 Such applications use \co{#include "urcu-signal.hpp"} and
-\co{@@@} to select signal-based RCU.
+\co{-luruc-signal} to select signal-based RCU.
 
 So-called ``bullet-proof RCU'' avoids the need to announce either threads
 or quiescent states, and is therefore the best choice for use by
@@ -220,7 +233,7 @@ libraries that might well be linked with RCU-oblivious applications.
 The penalty is that \co{rcu_read_lock()} incurs both a memory barrier
 and a test and \co{rcu_read_unlock()} incurs a memory barrier.
 Such applications or libraries use \co{#include urcu-bp.hpp} and
-\co{@@@}.
+\co{-lurcu-bp}.
 
 \subsection{Run-Time Domain Selection}
 \label{sec:Run-Time Domain Selection}
@@ -261,10 +274,10 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 \item	Signal-based RCU: \co{class rcu_signal}
 \end{itemize}
 
-Of course, additional implementations of RCU may be constructed by
-deriving from \co{rcu_domain} and/or by implementing the API
-shown in
-Figure~\ref{fig:Base RCU API}.
+% @@@ Of course, additional implementations of RCU may be constructed by
+% @@@ deriving from \co{rcu_domain} and/or by implementing the API
+% @@@ shown in
+% @@@ Figure~\ref{fig:Base RCU API}.
 
 \section{Scoped Readers}
 \label{sec:Scoped Readers}
@@ -274,13 +287,13 @@ Figure~\ref{fig:Base RCU API}.
 \begin{verbatim}
  1   class rcu_scoped_reader {
  2   public:
- 3     rcu_scoped_reader()
+ 3     rcu_scoped_reader() noexcept
  4     {
  5       this->rd = nullptr;
  6       rcu_read_lock();
  7     }
  8
- 9     rcu_scoped_reader(class rcu_domain *rd)
+ 9     explicit rcu_scoped_reader(class rcu_domain *rd) noexcept
 10     {
 11       this->rd = rd;
 12       rd->read_lock();
@@ -288,17 +301,19 @@ Figure~\ref{fig:Base RCU API}.
 14
 15     rcu_scoped_reader(const rcu_scoped_reader &) = delete;
 16
-17     ~rcu_scoped_reader()
-18     {
-19       if (this->rd)
-20         this->rd->read_unlock();
-21       else
-22         rcu_read_unlock();
-23     }
-24
-25   private:
-26     class rcu_domain *rd;
-27   };
+17     rcu_scoped_reader&operator=(const rcu_scoped_reader &) = delete;
+18
+19     ~rcu_scoped_reader() noexcept
+20     {
+21       if (this->rd)
+22         this->rd->read_unlock();
+23       else
+24         rcu_read_unlock();
+25     }
+26
+27   private:
+28     class rcu_domain *rd;
+29   };
 \end{verbatim}
 }
 \caption{RCU Scoped Readers}
@@ -324,9 +339,70 @@ The traditional C-language RCU callback uses address arithmetic
 to map from the \co{rcu_head} structure to the enclosing struct,
 for example, via the \co{container_of()} macro.
 Of course, this approach also works for C++, but this section first
-looks at some approaches that leverage C++ overloading and inheritance.
+looks at some approaches that leverage C++ overloading and inheritance,
+which has the benefit of avoiding macros and providing better type safety.
 This will not be an either-or situation: Several of these approaches
 are likely to be generally useful.
+
+\subsection{Derived Function Call}
+\label{sec:Derived Function Call}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1   template<typename T, typename D = default_delete<T>,
+ 2     bool E = is_empty<D>::value>
+ 3   class rcu_head_delete: private rcu_head {
+ 4     D deleter;
+ 5   public:
+ 6     static void trampoline(rcu_head *rhp)
+ 7     {
+ 8       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+ 9       auto obj = static_cast<T *>(rhdp);
+10       rhdp->deleter(obj);
+11     }
+12
+13     void call(D d = {})
+14     {
+15       deleter = d;
+16       call_rcu(static_cast<rcu_head *>(this), trampoline);
+17     }
+18
+19     void call(rcu_domain &rd, D d = {})
+20     {
+21       deleter = d;
+22       rd.call(static_cast<rcu_head *>(this), trampoline);
+23     }
+24   };
+25
+\end{verbatim}
+}
+\caption{RCU Callbacks: Derived Function Call}
+\label{fig:RCU Callbacks: Derived Function Call}
+\end{figure}
+
+The \co{rcu_head_derived} class provides overloaded \co{call()} methods,
+as shown in
+Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
+These methods take a deleter or not and take an
+\co{rcu_domain} class or not.
+If supplied, the function is invoked after a grace period,
+otherwise the object is handed to \co{delete}, courtesy of the defaults
+for the \co{d} parameters to the \co{call()} member functions.
+A supplied function might carry out teardown actions before freeing
+the object, or it might be the deallocation function from a
+specialized memory allocator.
+A lambda may of course be supplied, but lambda capture is not supported.
+(Use of lambda capture requires either memory allocation on the free path,
+which is not good practice, or requires that only one type of lambda be
+used for a given RCU-protected class, which is rather inconvenient.)
+
+If an \co{rcu_domain} is supplied, its \co{call()}
+member function is used, otherwise the \co{call_rcu()} free
+function is used.
+
+The next section provides a specialization that only permits \co{delete},
+which allows omitting the deleter, thus saving a bit of memory.
 
 \subsection{Derived Deletion}
 \label{sec:Derived Deletion}
@@ -389,65 +465,7 @@ In many cases, additional teardown actions are required, and
 it is often necessary to use a non-standard deallocator instead
 of the C++ \co{delete}.
 This possibility is covered by another specialization of the
-\co{rcu_head_deleter} class, which is described in the next section.
-
-\subsection{Derived Function Call}
-\label{sec:Derived Function Call}
-
-\begin{figure}[tbp]
-{ \scriptsize
-\begin{verbatim}
- 1   template<typename T, typename D = default_delete<T>,
- 2     bool E = is_empty<D>::value>
- 3   class rcu_head_delete: private rcu_head {
- 4     D deleter;
- 5   public:
- 6     static void trampoline(rcu_head *rhp)
- 7     {
- 8       auto rhdp = static_cast<rcu_head_delete *>(rhp);
- 9       auto obj = static_cast<T *>(rhdp);
-10       rhdp->deleter(obj);
-11     }
-12
-13     void call(D d = {})
-14     {
-15       deleter = d;
-16       call_rcu(static_cast<rcu_head *>(this), trampoline);
-17     }
-18
-19     void call(rcu_domain &rd, D d = {})
-20     {
-21       deleter = d;
-22       rd.call(static_cast<rcu_head *>(this), trampoline);
-23     }
-24   };
-25
-\end{verbatim}
-}
-\caption{RCU Callbacks: Derived Function Call}
-\label{fig:RCU Callbacks: Derived Function Call}
-\end{figure}
-
-The \co{rcu_head_derived} class provides overloaded \co{call()} methods,
-as shown in
-Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
-These methods take a function pointer or not and take an
-\co{rcu_domain} class or not.
-If supplied, the function is invoked after a grace period,
-otherwise the object is handed to \co{delete}, courtesy of the default
-for the \co{d} parameters to the \co{call()} member functions.
-A supplied function might carry out teardown actions before freeing
-the object, or it might be the deallocation function from a
-specialized memory allocator.
-A lambda may of course be supplied, but lambda capture is not supported.
-
-If an \co{rcu_domain} is supplied, its \co{call_rcu()}
-member function is used, otherwise the \co{call_rcu()} free
-function is used.
-
-Of course, the action of \co{rcu_head_delete} can be emulated by
-omitting the function pointer, but in that case \co{rcu_head_delete}
-uses less storage, since it need not store a function pointer.
+\co{rcu_head_delete} class, which was described in the previous section.
 
 \subsection{Pointer To Enclosing Class}
 \label{sec:Pointer To Enclosing Class}
@@ -517,7 +535,7 @@ If the RCU-protected class is \co{foo} and the name of the
 \co{rcu_head_ptr} member function is \co{rh}, then
 \co{foo1.rh.call(my_cb)} would cause the function \co{my_cb()} to be
 invoked after the end of a subsequent grace period.
-As with the previous classes, omitting the function pointer results
+As with the previous classes, omitting the deleter results
 in the object being passed to \co{delete} and an \co{rcu_domain}
 object may be specified.
 
@@ -682,7 +700,7 @@ Reference counting with DCAS is well-suited for small systems and/or
 low read-side contention, and particularly on systems that have limited
 thread-local-storage capabilities.
 Both RCU and reference counting with DCAS allow unconditional reference
-acquisition
+acquisition.
 
 Specialized workloads will have other considerations.
 For example, small-memory multiprocessor systems might be best-served by
