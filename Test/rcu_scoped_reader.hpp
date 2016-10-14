@@ -7,7 +7,7 @@ namespace std {
 			rcu_read_lock();
 		}
 
-		explicit rcu_scoped_reader(class rcu_domain *rd) noexcept
+		explicit rcu_scoped_reader(rcu_domain *rd)
 		{
 			this->rd = rd;
 			rd->read_lock();
@@ -26,6 +26,6 @@ namespace std {
 		}
 
 	private:
-		class rcu_domain *rd;
+		rcu_domain *rd;
 	};
 }

@@ -181,7 +181,7 @@ These tasks are carried out via the \co{rcu_register_thread()} and
 
 The implementations of RCU that feature the most aggressive implementations of
 \co{rcu_read_lock()} and \co{rcu_read_unlock()} require that each thread
-periodically pass through a \emph{quiescent state}, which is announce to RCU
+periodically pass through a \emph{quiescent state}, which is announced to RCU
 using \co{rcu_quiescent_state()}.
 A thread in a quiescent state is guaranteed not to be in an RCU
 read-side critical section.
@@ -225,7 +225,7 @@ On the one hand, readers are almost as fast as in the QSBR implementation,
 but on the other applications must give up a signal to RCU, by default
 \co{SIGUSR1}.
 Such applications use \co{#include "urcu-signal.hpp"} and
-\co{-luruc-signal} to select signal-based RCU.
+\co{-lurcu-signal} to select signal-based RCU.
 
 So-called ``bullet-proof RCU'' avoids the need to announce either threads
 or quiescent states, and is therefore the best choice for use by
@@ -293,7 +293,7 @@ Each domain creates a concrete subclass that implements its RCU APIs:
  6       rcu_read_lock();
  7     }
  8
- 9     explicit rcu_scoped_reader(class rcu_domain *rd) noexcept
+ 9     explicit rcu_scoped_reader(rcu_domain *rd)
 10     {
 11       this->rd = rd;
 12       rd->read_lock();
@@ -312,7 +312,7 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 25     }
 26
 27   private:
-28     class rcu_domain *rd;
+28     rcu_domain *rd;
 29   };
 \end{verbatim}
 }
@@ -384,18 +384,17 @@ are likely to be generally useful.
 The \co{rcu_head_derived} class provides overloaded \co{call()} methods,
 as shown in
 Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
-These methods take a deleter or not and take an
-\co{rcu_domain} class or not.
-If supplied, the function is invoked after a grace period,
-otherwise the object is handed to \co{delete}, courtesy of the defaults
-for the \co{d} parameters to the \co{call()} member functions.
-A supplied function might carry out teardown actions before freeing
-the object, or it might be the deallocation function from a
-specialized memory allocator.
-A lambda may of course be supplied, but lambda capture is not supported.
-(Use of lambda capture requires either memory allocation on the free path,
-which is not good practice, or requires that only one type of lambda be
-used for a given RCU-protected class, which is rather inconvenient.)
+These methods take a deleter and an optional
+\co{rcu_domain} class instance.
+The deleter's operator() is invoked after a grace period.
+The deleter type defaults to \co{std::default_delete<T>},
+but one could also use a
+custom functor class with an \co{operator()} that carries out teardown actions
+before freeing the object, or a raw function pointer type such as
+\co{void(*)(T*)}, or a lambda type.
+We recommend avoiding deleter types such as \co{std::function<void(T*)>}
+(and also any other type requiring memory allocation) because
+allocating memory on the free path can result in out-of-memory deadlocks.
 
 If an \co{rcu_domain} is supplied, its \co{call()}
 member function is used, otherwise the \co{call_rcu()} free
