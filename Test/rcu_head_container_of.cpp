@@ -7,10 +7,10 @@
 
 struct foo {
 	int a;
-	struct std::rcu_head rh;
+	rcu_head rh;
 };
 
-void my_cb(struct std::rcu_head *rhp)
+void my_cb(rcu_head *rhp)
 {
 	struct foo *fp;
 
@@ -25,19 +25,19 @@ int main(int argc, char **argv)
 	std::rcu_head_container_of<struct foo>::set_field(&foo::rh);
 
 	// First with a normal function.
-	std::call_rcu(&foo1.rh, my_cb);
-	std::rcu_barrier(); // Drain all callbacks before reusing them!
+	call_rcu(&foo1.rh, my_cb);
+	rcu_barrier(); // Drain all callbacks before reusing them!
 
 	// Next with a lambda, but no capture.
 	foo1.a = 43;
-	std::call_rcu(&foo1.rh,
-		      [] (std::rcu_head *rhp) {
+	call_rcu(&foo1.rh,
+		      [] (rcu_head *rhp) {
 			struct foo *fp;
 
 			fp = std::rcu_head_container_of<struct foo>::enclosing_class(rhp);
 			std::cout << "Lambda callback fp->a: " << fp->a << "\n";
 		      });
-	std::rcu_barrier();
+	rcu_barrier();
 
 	return 0;
 }

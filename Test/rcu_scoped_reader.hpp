@@ -14,7 +14,7 @@ namespace std {
 		}
 
 		rcu_scoped_reader(const rcu_scoped_reader &) = delete;
-		
+
 		rcu_scoped_reader&operator=(const rcu_scoped_reader &) = delete;
 
 		~rcu_scoped_reader() noexcept
