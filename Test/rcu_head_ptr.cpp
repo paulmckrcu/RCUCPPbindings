@@ -29,19 +29,19 @@ int main(int argc, char **argv)
 
 	foo1.rh = &foo1;
 	foo1.rh.call(my_cb);
-	std::rcu_barrier();
+	rcu_barrier();
 
 	foo1 = 43;
 	foo1.rh = &foo1;
 	foo1.rh.call([] (struct foo *fp) {
 			std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
-	std::rcu_barrier();
+	rcu_barrier();
 
 	std::cout << "Deletion with no rcu_domain\n";
 	fp = new foo(44);
 	fp->rh.call();
-	std::rcu_barrier();
+	rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo(45);

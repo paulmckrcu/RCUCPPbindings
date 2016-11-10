@@ -35,7 +35,7 @@ namespace std {
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(class rcu_domain &rd,
+		void call(rcu_domain &rd,
 			  void callback_func(T *obj) = nullptr)
 		{
 			this->callback_func = callback_func;
