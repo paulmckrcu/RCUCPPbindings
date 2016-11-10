@@ -23,8 +23,7 @@ PROGS = urcu \
 	rcu_head_ptr \
 	rcu_scoped_reader
 
-GCC_ARGS = -g -std=c++11 -I/Users/dshollm/Code/urcu/install/head/gcc-6_opt/include -L/Users/dshollm/Code/urcu/install/head/gcc-6_opt/lib -Wl,-rpath,/Users/dshollm/Code/urcu/install/head/gcc-6_opt/lib -DUSE_JEMALLOC
-
+GCC_ARGS = -g -std=c++11
 
 all: $(PROGS)
 
