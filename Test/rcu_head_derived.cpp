@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo;
-	fp->a = 44;
+	fp->a = 45;
 	fp->call(rs);
 	rs.barrier();
 
