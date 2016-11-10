@@ -21,7 +21,8 @@ PROGS = urcu \
 	rcu_head_derived \
 	rcu_head_derived1 \
 	rcu_head_ptr \
-	rcu_scoped_reader
+	rcu_scoped_reader \
+	rcu_ptr
 
 GCC_ARGS = -g -std=c++11
 
@@ -57,6 +58,9 @@ rcu_head_derived1: rcu_head_derived1.cpp
 
 rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
 	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -lpthread -lurcu -lurcu-signal
+
+rcu_ptr: rcu_ptr.cpp rcu_ptr.hpp
+	g++ $(GCC_ARGS) -o rcu_ptr rcu_ptr.cpp -lpthread -lurcu -lurcu-signal
 
 rcu_scoped_reader: rcu_scoped_reader.cpp rcu_scoped_reader.hpp
 	g++ $(GCC_ARGS) -o rcu_scoped_reader rcu_scoped_reader.cpp -lpthread -lurcu -lurcu-signal
