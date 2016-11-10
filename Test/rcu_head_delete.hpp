@@ -17,13 +17,18 @@ public:
 		rhdp->deleter(obj);
 	}
 
-	void call(D d = {})
+	static void rcu_head_deleter(T *obj)
+	{
+		delete obj;
+	}
+
+	void call(D d = rcu_head_deleter)
 	{
 		deleter = d;
 		call_rcu(static_cast<rcu_head *>(this), trampoline);
 	}
 
-	void call(rcu_domain &rd, D d = {})
+	void call(rcu_domain &rd, D d = rcu_head_deleter)
 	{
 		deleter = d;
 		rd.call(static_cast<rcu_head *>(this), trampoline);
