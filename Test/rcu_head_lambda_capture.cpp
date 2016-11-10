@@ -5,7 +5,7 @@
 
 // Lambda-capture approach.
 
-struct foo: public std::rcu_head_funcptr<foo, [foo*] () {}> {
+struct foo: public rcu_head_funcptr<foo, [foo*] () {}> {
 	int a;
 };
 
@@ -16,11 +16,11 @@ int main(int argc, char **argv)
 	struct foo *fp = &foo;
 
 	fp->a = 42;
-	std::call_rcu(fp,
+	call_rcu(fp,
 		      [=fp] (void) {
 				std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
-	std::rcu_barrier();
+	rcu_barrier();
 
 	return 0;
 }

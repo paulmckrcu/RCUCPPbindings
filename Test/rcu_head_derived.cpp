@@ -5,7 +5,7 @@
 
 // Derived-type approach.
 
-struct foo: public std::rcu_head_delete<foo, void(*)(foo*)> {
+struct foo: public rcu_head_delete<foo, void(*)(foo*)> {
 	int a;
 };
 
@@ -19,27 +19,27 @@ struct foo foo1;
 int main(int argc, char **argv)
 {
 	struct foo *fp;
-	class std::rcu_signal rs;
+	class rcu_signal rs;
 
-	printf("%zu %zu %zu\n", sizeof(std::rcu_head), sizeof(std::rcu_head_delete<foo, void(*)(foo*)>), sizeof(foo));
+	printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(rcu_head_delete<foo, void(*)(foo*)>), sizeof(foo));
 
 	// First with a normal function.
 	foo1.a = 42;
 	foo1.call(my_cb);
-	std::rcu_barrier(); // Drain all callbacks before reusing them!
+	rcu_barrier(); // Drain all callbacks before reusing them!
 
 	// Next with a lambda, but no capture.
 	foo1.a = 43;
 	foo1.call([] (struct foo *fp) {
 			std::cout << "Lambda callback fp->a: " << fp->a << "\n";
 		  });
-	std::rcu_barrier();
+	rcu_barrier();
 
 	std::cout << "Deletion with no rcu_domain\n";
 	fp = new foo;
 	fp->a = 44;
 	fp->call();
-	std::rcu_barrier();
+	rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo;

@@ -5,7 +5,7 @@
 
 // Derived-type approach.
 
-struct foo: public std::rcu_head_delete2<foo> {
+struct foo: public rcu_head_delete2<foo> {
 	int a;
 };
 
@@ -14,9 +14,9 @@ struct my_deleter {
 };
 
 template <class T>
-using rcu_head = std::rcu_head_delete2<T, my_deleter>;
+using my_rcu_head = rcu_head_delete2<T, my_deleter>;
 
-struct bar: public rcu_head<bar> {
+struct bar: public my_rcu_head<bar> {
 	int a;
 };
 
@@ -24,23 +24,23 @@ int main(int argc, char **argv)
 {
 	struct bar my_bar;
 	struct foo *fp = new struct foo;
-	class std::rcu_signal rs;
+	class rcu_signal rs;
 
 	// First with a normal function.
 	fp->a = 42;
 	fp->call();
-	std::rcu_barrier(); // Drain all callbacks on general principles
+	rcu_barrier(); // Drain all callbacks on general principles
 
 	// Next with a rcu_domain
 	fp = new struct foo;
 	fp->a = 43;
 	fp->call(rs);
-	std::rcu_barrier();
+	rcu_barrier();
 
 	// Next with my_deleter
 	my_bar.a = 44;
 	my_bar.call();
-	std::rcu_barrier();
+	rcu_barrier();
 
 
 	return 0;

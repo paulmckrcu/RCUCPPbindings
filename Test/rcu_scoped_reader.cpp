@@ -5,14 +5,14 @@
 
 int main()
 {
-	std::rcu_register_thread();
+	rcu_register_thread();
 	{
-		class std::rcu_scoped_reader rr;
+		class rcu_scoped_reader rr;
 	}
 	{
-		class std::rcu_scoped_reader rrs(std::rcu_signal);
+		class rcu_scoped_reader rrs(rcu_signal);
 	}
-	std::rcu_unregister_thread();
+	rcu_unregister_thread();
 
 	return 0;
 }
