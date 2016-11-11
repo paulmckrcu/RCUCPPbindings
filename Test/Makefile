@@ -24,7 +24,7 @@ PROGS = urcu \
 	rcu_scoped_reader \
 	rcu_ptr
 
-GCC_ARGS = -g -std=c++11
+GCC_ARGS = -g -std=c++1z
 
 all: $(PROGS)
 
