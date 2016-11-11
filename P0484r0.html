@@ -1834,7 +1834,66 @@ applies that offset to translate a pointer to the <code class="highlight"><span 
    <p>This address arithmetic must be carried out in the callback function,
 as shown in the above code.</p>
    <h2 class="heading settled" data-level="5" id="hazard-pointers-and-rcu"><span class="secno">5. </span><span class="content">Hazard Pointers and RCU: Which to Use?</span><a class="self-link" href="#hazard-pointers-and-rcu"></a></h2>
-   <p class="issue" id="issue-de8c394f"><a class="self-link" href="#issue-de8c394f"></a> TODO: Copy over table from tex file</p>
+   <table bgcolor="#EEEEFF" cellpadding="4">
+    <tbody>
+     <tr>
+      <td style="border-bottom: 1px solid black; border-right: 1px solid black;">
+      <td style="border-bottom: 1px solid black;"> Reference Counting
+      <td style="border-bottom: 1px solid black;"> Reference Counting with DCAS
+      <td style="border-bottom: 1px solid black;"> RCU
+      <td style="border-bottom: 1px solid black;"> Hazard Pointers 
+     <tr>
+      <td style="border-right: 1px solid black;">Unreclaimed objects
+      <td bgcolor="#00dd00">Bounded
+      <td bgcolor="#00dd00">Bounded
+      <td> Unbounded
+      <td bgcolor="#00dd00">Bounded 
+     <tr>
+      <td style="border-right: 1px solid black;"> Contention among readers 
+      <td> Can be very high
+      <td> Can be very high
+      <td bgcolor="#00dd00">No contention
+      <td bgcolor="#00dd00">No contention
+     <tr>
+      <td style="border-right: 1px solid black;"> Traversal forward progress 
+      <td> Either blocking or lock-free with limited reclamation
+      <td bgcolor="#00dd00"> Lock free
+      <td bgcolor="#7777dd">Bounded population oblivious wait-free
+      <td bgcolor="#00dd00"> Lock-free
+     <tr>
+      <td style="border-right: 1px solid black;"> Reclamation forward progress* 
+      <td> Either blocking or lock-free with limited reclamation
+      <td bgcolor="#00dd00">Lock free
+      <td> Blocking
+      <td bgcolor="#7777dd"> Bounded wait-free 
+     <tr>
+      <td style="border-right: 1px solid black;"> Traversal speed 
+      <td> Atomic read-modify-write updates
+      <td> Atomic read-modify-write updates
+      <td bgcolor="#00dd00"> No or low overhead
+      <td> Store-load fence
+     <tr>
+      <td style="border-right: 1px solid black;"> Reference acquisition
+      <td bgcolor="#00dd00"> Unconditional
+      <td bgcolor="#00dd00"> Unconditional
+      <td bgcolor="#00dd00"> Unconditional
+      <td> Conditional
+     <tr>
+      <td style="border-right: 1px solid black;"> Automatic reclamation 
+      <td bgcolor="#00dd00">Yes
+      <td bgcolor="#00dd00">Yes
+      <td> No
+      <td> No 
+     <tr>
+      <td style="border-right: 1px solid black;"> Purpose of domains 
+      <td> N/A
+      <td> N/A
+      <td> Isolate long-latency readers
+      <td> Limit contention, reduce space bounds, etc.
+     <tr>
+      <td colspan="5"><small>*  Does not include memory allocator, just the reclamation itself. </small>
+   </table>
+   <p class="issue" id="issue-f89111a0"><a class="self-link" href="#issue-f89111a0"></a> TODO: better formatting</p>
    <p>The above table
 provides a rough summary of the relative advantages of reference
 counting, RCU, and hazard pointers.
@@ -2021,5 +2080,5 @@ We are grateful to Jim Wasko for his support of this effort.</p>
   </dl>
   <h2 class="no-num no-ref heading settled" id="issues-index"><span class="content">Issues Index</span><a class="self-link" href="#issues-index"></a></h2>
   <div style="counter-reset:issue">
-   <div class="issue"> TODO: Copy over table from tex file<a href="#issue-de8c394f"> ↵ </a></div>
+   <div class="issue"> TODO: better formatting<a href="#issue-f89111a0"> ↵ </a></div>
   </div>

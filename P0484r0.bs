@@ -538,7 +538,74 @@ as shown in the above code.
 Hazard Pointers and RCU: Which to Use? {#hazard-pointers-and-rcu}
 ======================================
 
-issue: TODO: Copy over table from tex file
+<table bgcolor="#EEEEFF" cellpadding="4">
+    <tr>
+        <td style="border-bottom: 1px solid black; border-right: 1px solid black;"></td>
+        <td style="border-bottom: 1px solid black;"> Reference Counting</td>
+        <td style="border-bottom: 1px solid black;"> Reference Counting with DCAS</td>
+        <td style="border-bottom: 1px solid black;"> RCU</td>
+        <td style="border-bottom: 1px solid black;"> Hazard Pointers </td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;">Unreclaimed objects</td>
+        <td bgcolor="#00dd00">Bounded</td>
+        <td bgcolor="#00dd00">Bounded</td>
+        <td> Unbounded</td>
+        <td bgcolor="#00dd00">Bounded </td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Contention among readers </td>
+        <td> Can be very high</td>
+        <td> Can be very high</td>
+        <td bgcolor="#00dd00">No contention</td>
+        <td bgcolor="#00dd00">No contention</td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Traversal forward progress </td>
+        <td> Either blocking or lock-free with limited reclamation</td>
+        <td bgcolor="#00dd00"> Lock free</td>
+        <td bgcolor="#7777dd">Bounded population oblivious wait-free</td>
+        <td bgcolor="#00dd00"> Lock-free</td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Reclamation forward progress* </td>
+        <td> Either blocking or lock-free with limited reclamation</td>
+        <td bgcolor="#00dd00">Lock free</td>
+        <td> Blocking</td>
+        <td bgcolor="#7777dd"> Bounded wait-free </td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Traversal speed </td>
+        <td> Atomic read-modify-write updates</td>
+        <td> Atomic read-modify-write updates</td>
+        <td bgcolor="#00dd00"> No or low overhead</td>
+        <td> Store-load fence</td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Reference acquisition</td>
+        <td bgcolor="#00dd00"> Unconditional</td>
+        <td bgcolor="#00dd00"> Unconditional</td>
+        <td bgcolor="#00dd00"> Unconditional</td>
+        <td> Conditional</td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Automatic reclamation </td>
+        <td bgcolor="#00dd00">Yes</td>
+        <td bgcolor="#00dd00">Yes</td>
+        <td> No</td>
+        <td> No </td>
+    </tr>
+    <tr>
+        <td style="border-right: 1px solid black;"> Purpose of domains </td>
+        <td> N/A</td>
+        <td> N/A</td>
+        <td> Isolate long-latency readers</td>
+        <td> Limit contention, reduce space bounds, etc.</td>
+    </tr>
+    <tr><td colspan="5"><small>*  Does not include memory allocator, just the reclamation itself. </small></td></tr>
+</table>
+
+issue: TODO: better formatting 
 
 The above table
 provides a rough summary of the relative advantages of reference
