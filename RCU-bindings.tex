@@ -28,16 +28,17 @@
 }
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
-\title{P0461R0: Proposed RCU C++ API}
+\title{P0461R1: Proposed RCU C++ API}
 
 \author{
-{\bf Doc. No.: } WG21/P0461R0 \\
-{\bf Date: } 2016-10-16 \\
+{\bf Doc. No.: } WG21/P0461R1 \\
+{\bf Date: } 2016-11-11 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
-Isabella Muerte, and Arthur O'Dwyer\\
+Isabella Muerte, Arthur O'Dwyer, and David Holman \\
 {\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com,
 fraggamuffin@gmail.com,\\
-isabella.muerte@mnmlstc.com, and arthur.j.odwyer@gmail.com
+isabella.muerte@mnmlstc.com, arthur.j.odwyer@gmail.com, and
+dshollm@sandia.gov
 } % end author
 
 % Use the following at camera-ready time to suppress page numbers.
@@ -45,7 +46,7 @@ isabella.muerte@mnmlstc.com, and arthur.j.odwyer@gmail.com
 %\thispagestyle{empty}
 
 \pagestyle{myheadings}
-\markright{WG21/P0461R0}
+\markright{WG21/P0461R1}
 
 \maketitle
 
@@ -319,6 +320,10 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 \caption{RCU Scoped Readers}
 \label{fig:RCU Scoped Readers}
 \end{figure}
+
+@@@ This section needs to be replaced by adding shared-lock semantics
+to \co{rcu_read_lock()} and \co{rcu_read_unlock()}, as discussed at
+the 2016 Issaquah meeting. @@@
 
 In some cases, it might be convenient to use a scoped style for RCU readers,
 especially if the read-side critical section might be exited via exception.
