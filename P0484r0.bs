@@ -85,6 +85,7 @@ and
 table comparing reference counting, hazard pointers, and RCU, and finally
 [[#summary]] presents a summary.
 
+
 Base RCU API {#base-rcu-api}
 ============
 
@@ -221,7 +222,6 @@ Such applications or libraries use `#include urcu-bp.hpp` and
 Run-Time Domain Selection {#run-time-domain-selection}
 -------------------------
 
-
 The following code shows the abstract base class for runtime selection
 of RCU domains.
 
@@ -251,6 +251,7 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 * Memory-barrier RCU: `class rcu_mb`
 * QSBR RCU: `class rcu_qsbr`
 * Signal-based RCU: `class rcu_signal`
+
 
 Scoped Readers {#scoped-readers}
 ==============
@@ -296,6 +297,7 @@ implementation.
 
 This is intended to be used in a manner similar to
 `std::lock_guard`.
+
 
 RCU Callback Handling {#rcu-callback-handling}
 =====================
@@ -567,7 +569,6 @@ hazard pointers, while the read-mostly data structures in real-time
 systems might be best-served by RCU.
 
 
-
 Summary {#summary}
 =======
 
@@ -577,6 +578,7 @@ library.
 We believe that these bindings are also appropriate for the type-oblivious
 C++ RCU implementations that information-hiding considerations are likely
 to favor.
+
 
 Acknowledgments {#acknowledgments}
 ===============
