@@ -1,0 +1,588 @@
+<pre class='metadata'>
+Title: Proposed RCU C++ API
+Shortname: P0461
+Revision: 0
+Audience: SG1
+Status: P
+Group: WG21
+URL: http://wg21.link/p0461r0
+Editor: Paul E. McKenney, IBM, paulmck@linux.vnet.ibm.com
+Editor: David S. Hollman, Sandia National Labs, dshollm@sandia.gov
+Editor: Isabella Muerte, isabella.muerte@mnmlstc.com
+Editor: Arthur O'Dwyer, arthur.j.odwyer@gmail.com
+Editor: Maged Michael, Facebook, maged.michael@gmail.com
+Editor: Michael Wong, Codeplay, michael@codeplay.com
+Editor: Jonathan Lifflander, Sandia National Labs, jliffla@sandia.gov
+Date: 2016-11-11
+Markup Shorthands: markdown yes
+Repository: paulmckrcu/RCUCPPbindings
+Abstract: This document is based on [[P0279R1]] combined with feedback at
+Abstract: the 2015 Kona and 2016 Jacksonville meetings, which most notably called
+Abstract: for a C++-style method of handling different RCU implementations or
+Abstract: domains within a single translation unit, and which also contains
+Abstract: useful background material and references.
+Abstract: Unlike [[P0279R1]], which simply introduced RCU's C-language practice,
+Abstract: this document presents proposals for C++-style RCU APIs.
+Abstract: At present, it appears that these are not conflicting proposals, but
+Abstract: rather ways of handling different C++ use cases resulting from
+Abstract: inheritance, templates, and different levels of memory pressure.
+Abstract: This document also incorporates content from
+Abstract: [[P0232R0]]
+Abstract:
+Abstract: Note that this proposal is related to the hazard-pointer proposal in
+Abstract: that both proposals defer destructive actions such as reclamation until
+Abstract: all readers have completed.
+Abstract:
+Abstract: Note also that a redefinition of the infamous `memory_order_consume`
+Abstract: is the subject of a separate paper.
+</pre>
+<pre class=’biblio’>
+{
+    "MathieuDesnoyers2009URCU" : {
+        "authors": [
+            "M. Desnoyers"
+        ],
+        "href": "http://liburcu.org",
+        "title" : "[{RFC} git tree] userspace {RCU} (urcu) for {Linux}."
+    },
+    "PaulMcKenney2013LWNURCU" : {
+        "authors": [
+          "P. E. McKenney",
+          "M. Desnoyers",
+          "L. Jiangshan"
+        ],
+        "title": "User-space {RCU}.",
+        "href": "https://lwn.net/Articles/573424/"
+    },
+    "PaulEMcKenney2015ReadMostly" : {
+        "authors": [ "P. E. McKenney" ],
+        "title" : "Recent read-mostly research in 2015.",
+        "href" : "http://lwn.net/Articles/667593/"
+    }
+}
+</pre>
+
+<!---
+The documentation for the bikeshed specification generator can be found at
+https://tabatkins.github.io/bikeshed
+-->
+
+Introduction {#introduction}
+============
+
+This document proposes C++ APIs for read-copy update (RCU).
+For more information on RCU, including RCU semantics, see
+[[P0462R0]] ("Marking `memory_order_consume` Dependency Chains"),
+[[P0279R1]] ("Read-Copy Update (RCU) for C++"),
+[[P0190R2]] ("Proposal for New `memory_order_consume` Definition"),
+and
+[[P0098R1]] ("Towards Implementation and Use of `memory_order_consume`").
+
+[[#base-rcu-api]] presents the base (C-style) RCU API,
+[[#scoped-readers]] presents a proposal for scoped RCU readers,
+[[#rcu-callback-handling]] presents proposals for handling of RCU callbacks,
+[[#hazard-pointers-and-rcu]] presents a
+table comparing reference counting, hazard pointers, and RCU, and finally
+[[#summary]] presents a summary.
+
+Base RCU API {#base-rcu-api}
+============
+
+The base RCU API as provided by implementations such as
+userspace RCU ([[MathieuDesnoyers2009URCU]] and [[PaulMcKenney2013LWNURCU]]).
+
+```c++
+void rcu_read_lock();
+void rcu_read_unlock();
+void synchronize_rcu();
+void call_rcu(struct rcu_head *rhp,
+              void cbf(rcu_head *rhp));
+void rcu_barrier();
+void rcu_register_thread();
+void rcu_unregister_thread();
+void rcu_quiescent_state();
+void rcu_thread_offline();
+void rcu_thread_online();
+```
+This API is provided for compatibility with existing practice as
+well as to provide the highest performance for fast-path code.
+(See [[#rcu-domains]] for a proposed API that
+permits multiple RCU domains, as requested by several committee members.)
+
+Lines 1 and 2 show `rcu_read_lock()` and `rcu_read_unlock()`,
+which mark the beginning and the end, respectively, of an 
+*RCU read-side critical section*.
+These primitives may be nested, and matching `rcu_read_lock()`
+and `rcu_read_unlock()` calls need not be in the same scope.
+(That said, it is good practice to place them in the same scope
+in cases where the entire critical section fits comfortably into
+one scope.)
+
+Line 3 shows `synchronize_rcu()`, which waits for any pre-existing
+RCU read-side critical sections to complete.
+The period of time that `synchronize_rcu()` is required to wait is
+called a *grace period*.
+Note that a given call to `synchronize_rcu()` is *not* required to
+wait for critical sections that start later.
+
+Lines 4 and 5 show `call_rcu()`, which, after a subsequent grace period
+elapses, causes the `cbf(rhp)` *RCU callback function* to be invoked.
+Thus, `call_rcu()` is the asynchronous counterpart to
+`synchronize_rcu()`.
+In most cases, `synchronize_rcu()` is easier to use, however, `call_rcu()`
+has the benefit of moving the grace-period delay off of the updater's
+critical path.
+Use of `call_rcu()` is thus critically important for good performance of
+update-heavy workloads, as has been repeatedly discovered by any number of
+people new to RCU [[PaulEMcKenney2015ReadMostly]].
+
+Note that although `call_rcu()`'s callbacks are guaranteed not to be
+invoked too early, there is no guarantee that their execution won't be
+deferred for a considerable time.
+This can be a problem if a given program requires that all outstanding
+RCU callbacks be invoked before that program terminates.
+The `rcu_barrier()` function shown on line 6 is intended for this
+situation.
+This function blocks until all callbacks corresponding to previous
+`call_rcu()` invocations have been invoked and also until after
+those invocations have returned.
+Therefore, taking the following steps just before terminating a program
+will guarantee that all callbacks have completed:
+
+* Take whatever steps are required to ensure that there are no further invocations of `call_rcu()`.
+* Invoke `rcu_barrier()`.
+
+Carrying out this procedure just prior to program termination can be very
+helpful for avoiding false positives when using tools such as valgrind.
+
+Many RCU implementations require that every thread announce itself to
+RCU prior to entering the first RCU read-side critical section, and
+to announce its departure after exiting the last RCU read-side
+critical section.
+These tasks are carried out via the `rcu_register_thread()` and
+`rcu_unregister_thread()`, respectively.
+
+The implementations of RCU that feature the most aggressive implementations of
+`rcu_read_lock()` and `rcu_read_unlock()` require that each thread
+periodically pass through a *quiescent state*, which is announced to RCU
+using `rcu_quiescent_state()`.
+A thread in a quiescent state is guaranteed not to be in an RCU
+read-side critical section.
+Threads can also announce entry into and exit from 
+*extended quiescent states*, for example, before and after blocking system
+calls, using `rcu_thread_offline()` and `rcu_thread_online()`.
+
+RCU Domains {#rcu-domains}
+-----------
+
+The userspace RCU library features several RCU implementations, each
+optimized for different use cases.
+
+The quiescent-state based reclamation (QSBR) implementation is intended
+for standalone applications where the developers have full control
+over the entire application, and where extreme read-side performance
+and scalability is required.
+Applications use `#include "urcu-qsbr.hpp"` to select QSBR and
+`-lurcu -lurcu-qsbr` to link to it.
+These applications must use `rcu_register_thread()` and
+`rcu_unregister_thread()` to announce the coming and going
+of each thread that is to execute `rcu_read_lock()` and
+`rcu_read_unlock()`.
+They must also use `rcu_quiescent_state()`, `rcu_thread_offline()`,
+and `rcu_thread_online()` to announce quiescent states to RCU.
+
+The memory-barrier implementation is intended for applications that
+can announce threads (again using `rcu_register_thread()` and
+`rcu_unregister_thread()`), but for which announcing quiescent states is
+impractical.
+Such applications use `#include "urcu-mb.hpp"` and
+`-lurcu-mb` to select the memory-barrier implementation.
+Such applications will incur the overhead of a full memory barrier in
+each call to `rcu_read_lock()` and `rcu_read_unlock()`.
+
+The signal-based implementation represents a midpoint between the QSBR
+and memory-barrier implementations.
+Like the memory-barrier implementation, applications must announce
+threads, but need not announce quiescent states.
+On the one hand, readers are almost as fast as in the QSBR implementation,
+but on the other applications must give up a signal to RCU, by default
+`SIGUSR1`.
+Such applications use `#include "urcu-signal.hpp"` and
+`-lurcu-signal` to select signal-based RCU.
+
+So-called "bullet-proof RCU" avoids the need to announce either threads
+or quiescent states, and is therefore the best choice for use by
+libraries that might well be linked with RCU-oblivious applications.
+The penalty is that `rcu_read_lock()` incurs both a memory barrier
+and a test and `rcu_read_unlock()` incurs a memory barrier.
+Such applications or libraries use `#include urcu-bp.hpp` and
+`-lurcu-bp`.
+
+Run-Time Domain Selection {#run-time-domain-selection}
+-------------------------
+
+
+The following code shows the abstract base class for runtime selection
+of RCU domains.
+
+
+```c++
+class rcu_domain {
+public:
+  virtual void register_thread() = 0;
+  virtual void unregister_thread() = 0;
+  static inline bool register_thread_needed()
+          { return true; }
+  virtual void read_lock() noexcept = 0;
+  virtual void read_unlock() noexcept = 0;
+  virtual void synchronize() noexcept = 0;
+  virtual void call(class rcu_head *rhp,
+                    void cbf(rcu_head *rhp)) = 0;
+  virtual void barrier() noexcept = 0;
+  virtual void quiescent_state() noexcept = 0;
+  virtual void thread_offline() noexcept = 0;
+  virtual void thread_online() noexcept = 0;
+};
+```
+
+Each domain creates a concrete subclass that implements its RCU APIs:
+
+* Bullet-proof RCU: `class rcu_bp`
+* Memory-barrier RCU: `class rcu_mb`
+* QSBR RCU: `class rcu_qsbr`
+* Signal-based RCU: `class rcu_signal`
+
+Scoped Readers {#scoped-readers}
+==============
+
+```c++
+class rcu_scoped_reader {
+public:
+  rcu_scoped_reader() noexcept
+  {
+    this->rd = nullptr;
+    rcu_read_lock();
+  }
+
+  explicit rcu_scoped_reader(rcu_domain *rd)
+  {
+    this->rd = rd;
+    rd->read_lock();
+  }
+
+  rcu_scoped_reader(const rcu_scoped_reader &) = delete;
+
+  rcu_scoped_reader&operator=(const rcu_scoped_reader &) = delete;
+
+   rcu_scoped_reader() noexcept
+  {
+    if (this->rd)
+      this->rd->read_unlock();
+    else
+      rcu_read_unlock();
+  }
+
+private:
+  rcu_domain *rd;
+};
+```
+
+In some cases, it might be convenient to use a scoped style for RCU readers,
+especially if the read-side critical section might be exited via exception.
+The `rcu_scoped_reader` class shown above may be used for this purpose.
+An argumentless constructor uses the API, or an `rcu_domain` class
+may be passed to the constructor to use the specified RCU
+implementation.
+
+This is intended to be used in a manner similar to
+`std::lock_guard`.
+
+RCU Callback Handling {#rcu-callback-handling}
+=====================
+
+The traditional C-language RCU callback uses address arithmetic
+to map from the `rcu_head` structure to the enclosing struct,
+for example, via the `container_of()` macro.
+Of course, this approach also works for C++, but this section first
+looks at some approaches that leverage C++ overloading and inheritance,
+which has the benefit of avoiding macros and providing better type safety.
+This will not be an either-or situation: Several of these approaches
+are likely to be generally useful.
+
+Derived Function Call {#derived-function-call}
+---------------------
+
+```c++
+template<typename T, typename D = default_delete<T>,
+  bool E = is_empty<D>::value>
+class rcu_head_delete: private rcu_head {
+  D deleter;
+public:
+  static void trampoline(rcu_head *rhp)
+  {
+    auto rhdp = static_cast<rcu_head_delete *>(rhp);
+    auto obj = static_cast<T *>(rhdp);
+    rhdp->deleter(obj);
+  }
+
+  void call(D d = {})
+  {
+    deleter = d;
+    call_rcu(static_cast<rcu_head *>(this), trampoline);
+  }
+
+  void call(rcu_domain &rd, D d = {})
+  {
+    deleter = d;
+    rd.call(static_cast<rcu_head *>(this), trampoline);
+  }
+};
+```
+
+The `rcu_head_derived` class provides overloaded `call()` methods,
+as shown above.
+These methods take a deleter and an optional
+`rcu_domain` class instance.
+The deleter's operator() is invoked after a grace period.
+The deleter type defaults to `std::default_delete<T>`,
+but one could also use a
+custom functor class with an `operator()` that carries out teardown actions
+before freeing the object, or a raw function pointer type such as
+`void(*)(T*)`, or a lambda type.
+We recommend avoiding deleter types such as `std::function<void(T*)>`
+(and also any other type requiring memory allocation) because
+allocating memory on the free path can result in out-of-memory deadlocks.
+
+If an `rcu_domain` is supplied, its `call()`
+member function is used, otherwise the `call_rcu()` free
+function is used.
+
+The next section provides a specialization that only permits `delete`,
+which allows omitting the deleter, thus saving a bit of memory.
+
+Derived Deletion {#derived-deletion}
+----------------
+
+```c++
+template<typename T, typename D>
+class rcu_head_delete<T,D,true>: private rcu_head {
+public:
+  static void trampoline(rcu_head *rhp)
+  {
+    auto rhdp = static_cast<rcu_head_delete *>(rhp);
+    auto obj = static_cast<T *>(rhdp);
+    D()(obj);
+  }
+
+  void call(D d = {})
+  {
+    call_rcu(static_cast<rcu_head *>(this), trampoline);
+  }
+
+  void call(rcu_domain &rd, D d = {})
+  {
+    rd.call(static_cast<rcu_head *>(this), trampoline);
+  }
+};
+```
+
+By far the most common RCU callback simply frees the data structure.
+The above code
+shows a specialization of the `rcu_head_delete` class, which supports
+this idiom in cases where the RCU-protected data structure may inherit
+from this class.
+
+The `rcu_head_delete` class supplies a pair of overloaded `call()`
+member functions, the first of which has no non-defaulted argument.
+This argument-free member function arranges to `delete` the
+object after a grace period, using `call_rcu()` to do so.
+
+The second `call()` member function takes an `rcu_domain`
+argument, and uses that domain's `call_rcu()` function to wait
+for a grace period.
+
+Use of this approach is quite straightforward.
+For example, a class `foo` would inherit from
+`rcu_head_delete<foo>`, and given a `foo` pointer `fp`,
+would execute `fp->call()` to cause the object referenced
+by `fp` to be passed to `delete` at the end of a subsequent
+grace period.
+No further action is required.
+
+However, it is sometimes necessary to do more than simply free an
+object.
+In many cases, additional teardown actions are required, and
+it is often necessary to use a non-standard deallocator instead
+of the C++ `delete`.
+This possibility is covered by another specialization of the
+`rcu_head_delete` class, which was described in the previous section.
+
+Pointer To Enclosing Class {#pointer-to-enclosing-class}
+--------------------------
+```c++
+template<typename T>
+class rcu_head_ptr: public rcu_head {
+public:
+  rcu_head_ptr()
+  {
+    this->container_ptr = nullptr;
+  }
+
+  rcu_head_ptr(T *containing_class)
+  {
+    this->container_ptr = containing_class;
+  }
+
+  static void trampoline(rcu_head *rhp)
+  {
+    T *obj;
+    rcu_head_ptr<T> *rhdp;
+
+    rhdp = static_cast<rcu_head_ptr<T> *>(rhp);
+    obj = rhdp->container_ptr;
+    if (rhdp->callback_func)
+      rhdp->callback_func(obj);
+    else
+      delete obj;
+  }
+
+  void call(void callback_func(T *obj) = nullptr)
+  {
+    this->callback_func = callback_func;
+    call_rcu(static_cast<rcu_head *>(this), trampoline);
+  }
+
+  void call(class rcu_domain &rd,
+      void callback_func(T *obj) = nullptr)
+  {
+    this->callback_func = callback_func;
+    rd.call(static_cast<rcu_head *>(this), trampoline);
+  }
+
+private:
+  void (*callback_func)(T *obj);
+  T *container_ptr;
+};
+```
+
+If complex inheritance networks make inheriting from an
+`rcu_head` derived type impractical, one alternative is
+to maintain a pointer to the enclosing class as shown in
+the above figure.
+This `rcu_head_ptr` class is included as a member of the RCU-protected
+class.
+The `rcu_head_ptr` class's pointer must be initialized, for example,
+in the RCU-protected class's constructor.
+
+If the RCU-protected class is `foo` and the name of the
+`rcu_head_ptr` member function is `rh`, then
+`foo1.rh.call(my_cb)` would cause the function `my_cb()` to be
+invoked after the end of a subsequent grace period.
+As with the previous classes, omitting the deleter results
+in the object being passed to `delete` and an `rcu_domain`
+object may be specified.
+
+Address Arithmetic {#address-arithmetic}
+------------------
+
+```c++
+template<typename T>
+class rcu_head_container_of {
+public:
+  static void set_field(const struct rcu_head T::*rh_field)
+  {
+    T t;
+    T *p = &t;
+
+    rh_offset = ((char *)&(p->*rh_field)) - (char *)p;
+  }
+
+  static T *enclosing_class(struct rcu_head *rhp)
+  {
+    return (T *)((char *)rhp - rh_offset);
+  }
+
+private:
+  static inline size_t rh_offset;
+};
+
+template<typename T>
+size_t rcu_head_container_of<T>::rh_offset;
+```
+
+The above code
+shows an approach that can be used if memory is at a premium and
+the inheritance techniques cannot be used.
+The `set_field()` method sets the offset of the
+`rcu_head_container_of` member within the enclosing RCU-protected
+structure, and the `enclosing_class()` member function
+applies that offset to translate a pointer to the
+`rcu_head_container_of` member to the enclosing RCU-protected structure.
+
+```c++
+void my_cb(struct std::rcu_head *rhp)
+{
+  struct foo *fp;
+
+  fp = std::rcu_head_container_of<struct foo>::enclosing_class(rhp);
+  std::cout << "Callback fp->a: " << fp->a << "\n";
+}
+```
+
+This address arithmetic must be carried out in the callback function,
+as shown in the above code.
+
+
+Hazard Pointers and RCU: Which to Use? {#hazard-pointers-and-rcu}
+======================================
+
+issue: TODO: Copy over table from tex file
+
+The above table
+provides a rough summary of the relative advantages of reference
+counting, RCU, and hazard pointers.
+Advantages are marked in bold with green background, or with a blue
+background for strong advantages.
+
+Although reference counting has normally had quite limited capabilities
+and been quite tricky to apply for general linked data-structure
+traversal, given a double-pointer-width compare-and-swap instruction,
+it can work quite well, as shown in the "Reference Counting with DCAS"
+column.
+
+As a rough rule of thumb, for best performance and scalability, you
+should use RCU for read-intensive workloads and hazard pointers for
+workloads that have significant update rates.
+As another rough rule of thumb, a significant update rate has updates
+as part of more than 10% of its operations.
+Reference counting with DCAS is well-suited for small systems and/or
+low read-side contention, and particularly on systems that have limited
+thread-local-storage capabilities.
+Both RCU and reference counting with DCAS allow unconditional reference
+acquisition.
+
+Specialized workloads will have other considerations.
+For example, small-memory multiprocessor systems might be best-served by
+hazard pointers, while the read-mostly data structures in real-time
+systems might be best-served by RCU.
+
+
+
+Summary {#summary}
+=======
+
+This paper demonstrates a way of creating C++ bindings for a C-language
+RCU implementation, which has been tested against the userspace RCU
+library.
+We believe that these bindings are also appropriate for the type-oblivious
+C++ RCU implementations that information-hiding considerations are likely
+to favor.
+
+Acknowledgments {#acknowledgments}
+===============
+
+We owe thanks to Pedro Ramalhete for his review and comments.
+We are grateful to Jim Wasko for his support of this effort.
+
+
+
