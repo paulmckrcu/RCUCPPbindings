@@ -16,7 +16,7 @@ after_success: |
     cd "$TRAVIS_BUILD_DIR"
     # This generates a `web` directory containing the website.
     mkdir web
-    mv P0484r0.html web
+    mv P0484r0.html web/index.html
     cd web
     git init
     git checkout -b gh-pages
