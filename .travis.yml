@@ -1,0 +1,29 @@
+sudo: false
+language: python
+python:
+  - "2.7"
+install:
+  - pip install pygments lxml setuptools --upgrade
+  - git clone https://github.com/tabatkins/bikeshed.git
+  - pip install --editable $PWD/bikeshed
+  - bikeshed update
+script:
+  - bikeshed spec P0484r0.bs ${TRAVIS_BUILD_DIR}/P0484r0.html
+notifications:
+  email: false
+after_success: |
+  if [ -n "$GITHUB_API_KEY" ]; then
+    cd "$TRAVIS_BUILD_DIR"
+    # This generates a `web` directory containing the website.
+    git clone https://github.com/dhollman/RCUCPPbindings web
+    cd web
+    git checkout -b gh-pages
+    mv ../P0484r0.html index.html
+    git add .
+    git -c user.name='travis' -c user.email='travis' commit -m init
+    # Make sure to make the output quiet, or else the API token will leak!
+    # This works because the API key can replace your password.
+    git push -f -q https://dhollman:$GITHUB_API_KEY@github.com/dhollman/RCUCPPbindings.git gh-pages &2>/dev/null
+    cd "$TRAVIS_BUILD_DIR"
+  fi
+
