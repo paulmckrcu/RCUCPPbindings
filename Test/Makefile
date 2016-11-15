@@ -38,7 +38,7 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp
+urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp urcu_rv.cpp urcu_rv.hpp
 	g++ $(GCC_ARGS) -o urcu urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp -lpthread -lurcu -lurcu-signal -lurcu-bp -lurcu-mb -lurcu-qsbr
 
 rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
