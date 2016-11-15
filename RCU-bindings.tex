@@ -349,46 +349,72 @@ which has the benefit of avoiding macros and providing better type safety.
 This will not be an either-or situation: Several of these approaches
 are likely to be generally useful.
 
-\subsection{Derived Function Call}
-\label{sec:Derived Function Call}
+\subsection{Non-Intrusive Implementation}
+\label{sec:Non-Intrusive Implementation}
+
+@@@ David Holman implementation here @@@
+
+\subsection{Derived-Type Approach}
+\label{sec:Derived-Type Approach}
 
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   template<typename T, typename D = default_delete<T>,
- 2     bool E = is_empty<D>::value>
- 3   class rcu_head_delete: private rcu_head {
- 4     D deleter;
- 5   public:
- 6     static void trampoline(rcu_head *rhp)
- 7     {
- 8       auto rhdp = static_cast<rcu_head_delete *>(rhp);
- 9       auto obj = static_cast<T *>(rhdp);
-10       rhdp->deleter(obj);
-11     }
-12
-13     void call(D d = {})
-14     {
-15       deleter = d;
-16       call_rcu(static_cast<rcu_head *>(this), trampoline);
-17     }
-18
-19     void call(rcu_domain &rd, D d = {})
-20     {
-21       deleter = d;
-22       rd.call(static_cast<rcu_head *>(this), trampoline);
-23     }
-24   };
-25
+ 1   template<typename T,
+ 2            typename D = default_delete<T>,
+ 3            bool E = is_empty<D>::value>
+ 4   class rcu_head_delete: private rcu_head {
+ 5     D deleter;
+ 6   public:
+ 7     static void trampoline(rcu_head *rhp)
+ 8     {
+ 9       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+10       auto obj = static_cast<T *>(rhdp);
+11       rhdp->deleter(obj);
+12     }
+13
+14     void call(D d = {})
+15     {
+16       deleter = d;
+17       call_rcu(static_cast<rcu_head *>(this), trampoline);
+18     }
+19
+20     void call(rcu_domain &rd, D d = {})
+21     {
+22       deleter = d;
+23       rd.call(static_cast<rcu_head *>(this), trampoline);
+24     }
+25   };
+26
+27   template<typename T, typename D>
+28   class rcu_head_delete<T,D,true>: private rcu_head {
+29   public:
+30     static void trampoline(rcu_head *rhp)
+31     {
+32       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+33       auto obj = static_cast<T *>(rhdp);
+34       D()(obj);
+35     }
+36
+37     void call(D d = {})
+38     {
+39       call_rcu(static_cast<rcu_head *>(this), trampoline);
+40     }
+41
+42     void call(rcu_domain &rd, D d = {})
+43     {
+44       rd.call(static_cast<rcu_head *>(this), trampoline);
+45     }
+46   };
 \end{verbatim}
 }
-\caption{RCU Callbacks: Derived Function Call}
-\label{fig:RCU Callbacks: Derived Function Call}
+\caption{RCU Callbacks: Derived-Type Approach}
+\label{fig:RCU Callbacks: Derived-Type Approach}
 \end{figure}
 
-The \co{rcu_head_derived} class provides overloaded \co{call()} methods,
+The \co{rcu_head_delete} class provides overloaded \co{call()} methods,
 as shown in
-Figure~\ref{fig:RCU Callbacks: Derived Function Call}.
+Figure~\ref{fig:RCU Callbacks: Derived-Type Approach}.
 These methods take a deleter and an optional
 \co{rcu_domain} class instance.
 The deleter's operator() is invoked after a grace period.
@@ -407,69 +433,6 @@ function is used.
 
 The next section provides a specialization that only permits \co{delete},
 which allows omitting the deleter, thus saving a bit of memory.
-
-\subsection{Derived Deletion}
-\label{sec:Derived Deletion}
-
-\begin{figure}[tbp]
-{ \scriptsize
-\begin{verbatim}
- 1   template<typename T, typename D>
- 2   class rcu_head_delete<T,D,true>: private rcu_head {
- 3   public:
- 4     static void trampoline(rcu_head *rhp)
- 5     {
- 6       auto rhdp = static_cast<rcu_head_delete *>(rhp);
- 7       auto obj = static_cast<T *>(rhdp);
- 8       D()(obj);
- 9     }
-10
-11     void call(D d = {})
-12     {
-13       call_rcu(static_cast<rcu_head *>(this), trampoline);
-14     }
-15
-16     void call(rcu_domain &rd, D d = {})
-17     {
-18       rd.call(static_cast<rcu_head *>(this), trampoline);
-19     }
-20   };
-\end{verbatim}
-}
-\caption{RCU Callbacks: Derived Deletion}
-\label{fig:RCU Callbacks: Derived Deletion}
-\end{figure}
-
-By far the most common RCU callback simply frees the data structure.
-Figure~\ref{fig:RCU Callbacks: Derived Deletion}
-shows a specialization of the \co{rcu_head_delete} class, which supports
-this idiom in cases where the RCU-protected data structure may inherit
-from this class.
-
-The \co{rcu_head_delete} class supplies a pair of overloaded \co{call()}
-member functions, the first of which has no non-defaulted argument.
-This argument-free member function arranges to \co{delete} the
-object after a grace period, using \co{call_rcu()} to do so.
-
-The second \co{call()} member function takes an \co{rcu_domain}
-argument, and uses that domain's \co{call_rcu()} function to wait
-for a grace period.
-
-Use of this approach is quite straightforward.
-For example, a class \co{foo} would inherit from
-\co{rcu_head_delete<foo>}, and given a \co{foo} pointer \co{fp},
-would execute \co{fp->call()} to cause the object referenced
-by \co{fp} to be passed to \co{delete} at the end of a subsequent
-grace period.
-No further action is required.
-
-However, it is sometimes necessary to do more than simply free an
-object.
-In many cases, additional teardown actions are required, and
-it is often necessary to use a non-standard deallocator instead
-of the C++ \co{delete}.
-This possibility is covered by another specialization of the
-\co{rcu_head_delete} class, which was described in the previous section.
 
 \subsection{Pointer To Enclosing Class}
 \label{sec:Pointer To Enclosing Class}
