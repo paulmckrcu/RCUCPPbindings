@@ -1,4 +1,4 @@
-\documentclass[letterpaper,twocolumn,10pt]{article}
+\documentclass[letterpaper,10pt]{article}
 \usepackage{epsfig,endnotes}
 %\usepackage{usenix,epsfig}
 
@@ -12,6 +12,7 @@
 \usepackage{listings}
 \usepackage{xspace}
 \usepackage[table]{xcolor}
+\usepackage{rotating}
 \lstset{basicstyle=\ttfamily}
 \usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
 
@@ -35,10 +36,9 @@
 {\bf Date: } 2016-11-11 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, Arthur O'Dwyer, and David Holman \\
-{\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com,
-fraggamuffin@gmail.com,\\
-isabella.muerte@mnmlstc.com, arthur.j.odwyer@gmail.com, and
-dshollm@sandia.gov
+{\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com, \\
+fraggamuffin@gmail.com, isabella.muerte@mnmlstc.com, \\
+arthur.j.odwyer@gmail.com, and dshollm@sandia.gov
 } % end author
 
 % Use the following at camera-ready time to suppress page numbers.
@@ -572,7 +572,7 @@ Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 \section{Hazard Pointers and RCU: Which to Use?}
 \label{sec:Hazard Pointers and RCU: Which to Use?}
 
-\begin{table*}
+\begin{sidewaystable*}
 \small
 \centering
 \begin{tabular}{p{1.2in}|p{1.2in}|p{1.2in}|p{1.2in}|p{1.2in}}
@@ -644,7 +644,7 @@ Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
 \flushleft
 \noindent
 *~~Does not include memory allocator, just the reclamation itself.
-\end{table*}
+\end{sidewaystable*}
 
 Table~\ref{tab:Comparison of Deferred-Reclamation Mechanisms}
 provides a rough summary of the relative advantages of reference
