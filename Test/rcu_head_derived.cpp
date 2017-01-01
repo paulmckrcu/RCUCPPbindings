@@ -36,15 +36,13 @@ int main(int argc, char **argv)
 	rcu_barrier();
 
 	std::cout << "Deletion with no rcu_domain\n";
-	fp = new foo;
-	fp->a = 44;
-	fp->call();
+	foo1.a = 44;
+	foo1.call(my_cb);
 	rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
-	fp = new foo;
-	fp->a = 45;
-	fp->call(rs);
+	foo1.a = 45;
+	foo1.call(rs, my_cb);
 	rs.barrier();
 
 	return 0;
