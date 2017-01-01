@@ -1,6 +1,8 @@
 #include <iostream>
+#include <string>
 #include <unistd.h>
-#include "urcu-signal.hpp"
+#include <urcu.h>
+#include "rcu_domain.hpp"
 
 struct foo {
 	int a;
@@ -27,14 +29,14 @@ void synchronize_rcu_abstract(std::rcu_domain &p, std::string s)
 	p.unregister_thread();
 }
 
-extern class std::rcu_domain &rb;
-extern class std::rcu_domain &rm;
-extern class std::rcu_domain &rq;
+extern std::rcu_domain &rb;
+extern std::rcu_domain &rm;
+extern std::rcu_domain &rq;
+extern std::rcu_domain &rs;
+extern std::rcu_domain &rv;
 
 int main()
 {
-	class std::rcu_signal rs;
-
 	rcu_register_thread();
 	rcu_read_lock();
 	rcu_read_unlock();
@@ -44,8 +46,9 @@ int main()
 	rcu_barrier();
 	rcu_unregister_thread();
 
-	synchronize_rcu_abstract(rs, "Derived class rcu_signal");
 	synchronize_rcu_abstract(rb, "Derived class rcu_bp");
 	synchronize_rcu_abstract(rm, "Derived class rcu_mb");
 	synchronize_rcu_abstract(rq, "Derived class rcu_qsbr");
+	synchronize_rcu_abstract(rs, "Derived class rcu_signal");
+	synchronize_rcu_abstract(rv, "Derived class rcu_rv");
 }

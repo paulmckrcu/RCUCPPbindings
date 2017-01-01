@@ -14,21 +14,15 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = urcu \
-	rcu_head_container_of \
-	rcu_head_delete \
-	rcu_head_delete2 \
-	rcu_head_derived \
-	rcu_head_derived1 \
-	rcu_head_ptr \
-	rcu_scoped_reader \
-	rcu_ptr
+PROGS = test1 test2 test3 test4 test5 test6 test7 test8
 
-GCC_ARGS = -g -std=c++1z
+CXXFLAGS = -g -std=c++1z
 
 ifeq ($(shell uname),Darwin)
   # This is where "brew install userspace-rcu" installs the headers and archives on OS X 10.11.
-  GCC_ARGS += -I/usr/local/Cellar/userspace-rcu/0.9.1/include -L/usr/local/Cellar/userspace-rcu/0.9.1/lib
+  CXXFLAGS += -I/usr/local/Cellar/userspace-rcu/0.9.1/include -L/usr/local/Cellar/userspace-rcu/0.9.1/lib
+  # Clang on OS X doesn't yet support the "thread_local" storage-qualifier.
+  CXXFLAGS += -Dthread_local=
 endif
 
 all: $(PROGS)
@@ -43,35 +37,29 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-urcu: urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp urcu-signal.hpp rcu_domain.hpp rcu_domain_derived.hpp urcu_rv.cpp urcu_rv.hpp
-	g++ $(GCC_ARGS) -o urcu urcu.cpp urcu_bp.cpp urcu-mb.cpp urcu-qsbr.cpp -lpthread -lurcu -lurcu-signal -lurcu-bp -lurcu-mb -lurcu-qsbr
+test1: dshollman/test1.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_head_container_of: rcu_head_container_of.cpp rcu_head_container_of.hpp
-	g++ $(GCC_ARGS) -o rcu_head_container_of rcu_head_container_of.cpp -lpthread -lurcu -lurcu-signal
+test2: ajodwyer/test2.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_head_delete: rcu_head_delete.cpp rcu_head_delete.hpp
-	g++ $(GCC_ARGS) -o rcu_head_delete rcu_head_delete.cpp -lpthread -lurcu -lurcu-signal
+test3: ajodwyer/test3.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_head_delete2: rcu_head_delete2.cpp rcu_head_delete2.hpp
-	g++ $(GCC_ARGS) -o rcu_head_delete2 rcu_head_delete2.cpp -lpthread -lurcu -lurcu-signal
+test4: test4.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_head_derived: rcu_head_derived.cpp rcu_head_delete.hpp
-	g++ $(GCC_ARGS) -o rcu_head_derived rcu_head_derived.cpp -lpthread -lurcu -lurcu-signal
+test5: domains/test5.cpp domains/test5b.cpp domains/test5m.cpp domains/test5q.cpp domains/test5s.cpp domains/test5v.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread -lurcu -lurcu-bp -lurcu-mb -lurcu-qsbr -lurcu-signal
 
-rcu_head_derived1: rcu_head_derived1.cpp
-	g++ $(GCC_ARGS) -o rcu_head_derived1 rcu_head_derived1.cpp -lpthread -lurcu -lurcu-signal
+test6: imuerte/test6.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_head_ptr: rcu_head_ptr.cpp rcu_head_ptr.hpp
-	g++ $(GCC_ARGS) -o rcu_head_ptr rcu_head_ptr.cpp -lpthread -lurcu -lurcu-signal
+test7: intrusive/test7.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-rcu_ptr: rcu_ptr.cpp rcu_ptr.hpp
-	g++ $(GCC_ARGS) -o rcu_ptr rcu_ptr.cpp -lpthread -lurcu -lurcu-signal
-
-rcu_scoped_reader: rcu_scoped_reader.cpp rcu_scoped_reader.hpp
-	g++ $(GCC_ARGS) -o rcu_scoped_reader rcu_scoped_reader.cpp -lpthread -lurcu -lurcu-signal
-
-# rcu_head_lambda_capture: rcu_head_lambda_capture.cpp rcu_head_lambda_capture.hpp
-#	g++ $(GCC_ARGS) -o rcu_head_lambda_capture rcu_head_lambda_capture.cpp -lpthread -lurcu -lurcu-signal
+test8: intrusive2/test8.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
 clean:
-	rm -f $(PROGS)
+	rm -rf $(PROGS) *.o *.dSYM

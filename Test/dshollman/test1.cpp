@@ -1,4 +1,3 @@
-
 #include "rcu_ptr.hpp"
 
 #include <iostream> // std::cout
