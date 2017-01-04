@@ -18,16 +18,16 @@ namespace std {
 			rhdp->deleter(obj);
 		}
 
-		void call(D d = {})
+		void retire(D d = {})
 		{
 			deleter = d;
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(rcu_domain &rd, D d = {})
+		void retire(rcu_domain &rd, D d = {})
 		{
 			deleter = d;
-			rd.call(static_cast<rcu_head *>(this), trampoline);
+			rd.retire(static_cast<rcu_head *>(this), trampoline);
 		}
 	};
 
@@ -41,14 +41,14 @@ namespace std {
 			D()(obj);
 		}
 
-		void call(D d = {})
+		void retire(D d = {})
 		{
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(rcu_domain &rd, D d = {})
+		void retire(rcu_domain &rd, D d = {})
 		{
-			rd.call(static_cast<rcu_head *>(this), trampoline);
+			rd.retire(static_cast<rcu_head *>(this), trampoline);
 		}
 	};
 }

@@ -23,9 +23,9 @@ namespace std {
 		}
 
 		void call (rcu_domain& rd) {
-			rd.call(this, +[] (rcu_head * rhp) {
-				auto self = static_cast<T*>(rhp);
-				self->get_deleter()(self);
+			rd.retire(this, +[] (rcu_head * rhp) {
+				  auto self = static_cast<T*>(rhp);
+				  self->get_deleter()(self);
 			});
 		}
 	};

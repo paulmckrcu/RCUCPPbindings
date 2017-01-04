@@ -14,16 +14,16 @@ namespace std {
 
 	public:
 
-		void call(std::function<F> func)
+		void retire(std::function<F> func)
 		{
 			this->func = func;
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(std::function<F> func, class rcu_domain &rd)
+		void retire(std::function<F> func, class rcu_domain &rd)
 		{
 			this->func = func;
-			rd.call(static_cast<rcu_head *>(this), trampoline);
+			rd.retire(static_cast<rcu_head *>(this), trampoline);
 		}
 	};
 }

@@ -26,8 +26,8 @@ public:
 		synchronize_rcu();
 	}
 
-	void call(rcu_head *rhp,
-		  void cbf(rcu_head *rhp))
+	void retire(rcu_head *rhp,
+		    void cbf(rcu_head *rhp))
 	{
 		call_rcu(rhp, cbf);
 	}

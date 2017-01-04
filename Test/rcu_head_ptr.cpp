@@ -28,24 +28,24 @@ int main(int argc, char **argv)
 	class std::rcu_signal rs;
 
 	foo1.rh = &foo1;
-	foo1.rh.call(my_cb);
+	foo1.rh.retire(my_cb);
 	rcu_barrier();
 
 	foo1 = 43;
 	foo1.rh = &foo1;
-	foo1.rh.call([] (struct foo *fp) {
+	foo1.rh.retire([] (struct foo *fp) {
 			std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
 	rcu_barrier();
 
 	std::cout << "Deletion with no rcu_domain\n";
 	fp = new foo(44);
-	fp->rh.call();
+	fp->rh.retire();
 	rcu_barrier();
 
 	std::cout << "Deletion with rcu_signal rcu_domain\n";
 	fp = new foo(45);
-	fp->rh.call(rs);
+	fp->rh.retire(rs);
 	rs.barrier();
 
 	return 0;

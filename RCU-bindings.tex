@@ -251,7 +251,7 @@ Such applications or libraries use \co{#include urcu-bp.hpp} and
  7   virtual void read_lock() noexcept = 0;
  8   virtual void read_unlock() noexcept = 0;
  9   virtual void synchronize() noexcept = 0;
-10   virtual void call(class rcu_head *rhp,
+10   virtual void retire(class rcu_head *rhp,
 11         void cbf(class rcu_head *rhp)) = 0;
 12   virtual void barrier() noexcept = 0;
 13   virtual void quiescent_state() noexcept = 0;
@@ -373,16 +373,16 @@ are likely to be generally useful.
 11       rhdp->deleter(obj);
 12     }
 13
-14     void call(D d = {})
+14     void retire(D d = {})
 15     {
 16       deleter = d;
 17       call_rcu(static_cast<rcu_head *>(this), trampoline);
 18     }
 19
-20     void call(rcu_domain &rd, D d = {})
+20     void retire(rcu_domain &rd, D d = {})
 21     {
 22       deleter = d;
-23       rd.call(static_cast<rcu_head *>(this), trampoline);
+23       rd.retire(static_cast<rcu_head *>(this), trampoline);
 24     }
 25   };
 26
@@ -396,14 +396,14 @@ are likely to be generally useful.
 34       D()(obj);
 35     }
 36
-37     void call(D d = {})
+37     void retire(D d = {})
 38     {
 39       call_rcu(static_cast<rcu_head *>(this), trampoline);
 40     }
 41
-42     void call(rcu_domain &rd, D d = {})
+42     void retire(rcu_domain &rd, D d = {})
 43     {
-44       rd.call(static_cast<rcu_head *>(this), trampoline);
+44       rd.retire(static_cast<rcu_head *>(this), trampoline);
 45     }
 46   };
 \end{verbatim}
@@ -412,7 +412,7 @@ are likely to be generally useful.
 \label{fig:RCU Callbacks: Derived-Type Approach}
 \end{figure}
 
-The \co{rcu_head_delete} class provides overloaded \co{call()} methods,
+The \co{rcu_head_delete} class provides overloaded \co{retire()} methods,
 as shown in
 Figure~\ref{fig:RCU Callbacks: Derived-Type Approach}.
 These methods take a deleter and an optional
@@ -427,7 +427,7 @@ We recommend avoiding deleter types such as \co{std::function<void(T*)>}
 (and also any other type requiring memory allocation) because
 allocating memory on the free path can result in out-of-memory deadlocks.
 
-If an \co{rcu_domain} is supplied, its \co{call()}
+If an \co{rcu_domain} is supplied, its \co{retire()}
 member function is used, otherwise the \co{call_rcu()} free
 function is used.
 
@@ -466,17 +466,17 @@ which allows omitting the deleter, thus saving a bit of memory.
 24         delete obj;
 25     }
 26
-27     void call(void callback_func(T *obj) = nullptr)
+27     void retire(void callback_func(T *obj) = nullptr)
 28     {
 29       this->callback_func = callback_func;
 30       call_rcu(static_cast<rcu_head *>(this), trampoline);
 31     }
 32
-33     void call(class rcu_domain &rd,
+33     void retire(class rcu_domain &rd,
 34         void callback_func(T *obj) = nullptr)
 35     {
 36       this->callback_func = callback_func;
-37       rd.call(static_cast<rcu_head *>(this), trampoline);
+37       rd.retire(static_cast<rcu_head *>(this), trampoline);
 38     }
 39
 40   private:
@@ -500,7 +500,7 @@ in the RCU-protected class's constructor.
 
 If the RCU-protected class is \co{foo} and the name of the
 \co{rcu_head_ptr} member function is \co{rh}, then
-\co{foo1.rh.call(my_cb)} would cause the function \co{my_cb()} to be
+\co{foo1.rh.retire(my_cb)} would cause the function \co{my_cb()} to be
 invoked after the end of a subsequent grace period.
 As with the previous classes, omitting the deleter results
 in the object being passed to \co{delete} and an \co{rcu_domain}
