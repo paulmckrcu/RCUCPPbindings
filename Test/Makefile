@@ -26,6 +26,11 @@ PROGS = urcu \
 
 GCC_ARGS = -g -std=c++1z
 
+ifeq ($(shell uname),Darwin)
+  # This is where "brew install userspace-rcu" installs the headers and archives on OS X 10.11.
+  GCC_ARGS += -I/usr/local/Cellar/userspace-rcu/0.9.1/include -L/usr/local/Cellar/userspace-rcu/0.9.1/lib
+endif
+
 all: $(PROGS)
 
 # NOTE:  For decent scalability on update-side tests as of early 2015,
