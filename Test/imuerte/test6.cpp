@@ -28,18 +28,18 @@ int main(int argc, char **argv)
 
     // First with a normal function.
     fp->a = 42;
-    fp->call();
+    fp->retire();
     rcu_barrier(); // Drain all callbacks on general principles
 
     // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
-    fp->call(rs);
+    fp->retire(rs);
     rcu_barrier();
 
     // Next with my_deleter
     my_bar.a = 44;
-    my_bar.call();
+    my_bar.retire();
     rcu_barrier();
 
     return 0;

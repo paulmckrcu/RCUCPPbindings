@@ -24,7 +24,7 @@ void synchronize_rcu_abstract(std::rcu_domain &p, std::string s)
 	p.read_unlock();
 	p.quiescent_state();
 	p.synchronize();
-	p.call(&my_foo.rh, my_func);
+	p.retire(&my_foo.rh, my_func);
 	p.barrier();
 	p.unregister_thread();
 }

@@ -29,17 +29,17 @@ namespace std {
 				delete obj;
 		}
 
-		void call(void callback_func(T *obj) = nullptr)
+		void retire(void callback_func(T *obj) = nullptr)
 		{
 			this->callback_func = callback_func;
 			call_rcu(static_cast<rcu_head *>(this), trampoline);
 		}
 
-		void call(rcu_domain &rd,
+		void retire(rcu_domain &rd,
 			  void callback_func(T *obj) = nullptr)
 		{
 			this->callback_func = callback_func;
-			rd.call(static_cast<rcu_head *>(this), trampoline);
+			rd.retire(static_cast<rcu_head *>(this), trampoline);
 		}
 
 	private:

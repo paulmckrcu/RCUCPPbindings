@@ -14,7 +14,7 @@ namespace std {
         void read_lock() noexcept { rcu_read_lock(); }
         void read_unlock() noexcept { rcu_read_unlock(); }
         void synchronize() noexcept { synchronize_rcu(); }
-        void call(rcu_head *rhp, void (*cbf)(rcu_head *rhp)) { call_rcu(rhp, cbf); }
+        void retire(rcu_head *rhp, void (*cbf)(rcu_head *rhp)) { call_rcu(rhp, cbf); }
         void barrier() noexcept { rcu_barrier(); }
         void quiescent_state() noexcept { rcu_quiescent_state(); }
         void thread_offline() noexcept { rcu_thread_offline(); }

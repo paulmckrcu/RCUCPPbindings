@@ -24,24 +24,24 @@ int main(int argc, char **argv)
 
     // First with a normal function.
     foo1.a = 42;
-    foo1.call(my_cb);
+    foo1.retire(my_cb);
     rcu_barrier(); // Drain all callbacks before reusing them!
 
     // Next with a lambda, but no capture.
     foo1.a = 43;
-    foo1.call([] (struct foo *fp) {
+    foo1.retire([] (struct foo *fp) {
             std::cout << "Lambda callback fp->a: " << fp->a << "\n";
           });
     rcu_barrier();
 
     std::cout << "Deletion with no rcu_domain\n";
     foo1.a = 44;
-    foo1.call(my_cb);
+    foo1.retire(my_cb);
     rcu_barrier();
 
     std::cout << "Deletion with rcu_signal rcu_domain\n";
     foo1.a = 45;
-    foo1.call(rs, my_cb);
+    foo1.retire(rs, my_cb);
     rs.barrier();
 
     return 0;

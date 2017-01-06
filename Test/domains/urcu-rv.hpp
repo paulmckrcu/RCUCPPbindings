@@ -27,7 +27,7 @@ thread_local int tl_urcu_rv_tid = -1;
  * Limitations:
  * - read_lock()/read_unlock() are not reentrant;
  * - The number of registered (reader) threads can not be larger than maxThreads
- * - The call()/barrier() implementation uses futures and async for simplicity but it is crappy and untested.
+ * - The retire()/barrier() implementation uses futures and async for simplicity but it is crappy and untested.
  *
  *
  */
@@ -118,7 +118,7 @@ public:
         // TODO: Do we need to handle here the waiting callbacks?
     }
 
-    void call(rcu_head *rhp, void (*cbf)(rcu_head *rhp))
+    void retire(rcu_head *rhp, void (*cbf)(rcu_head *rhp))
     {
         const int tid = tl_urcu_rv_tid;
         auto lamb = [&rhp,&cbf,&tid,this]() { synchronize_tid(tid); cbf(rhp); };

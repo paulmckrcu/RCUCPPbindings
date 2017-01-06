@@ -84,14 +84,14 @@ class rcu_ptr {
   public:
 
     //==========================================================================
-    // call() overloads
+    // retire() overloads
 
-    void call() {
+    void retire() {
       ::std::experimental::call_rcu(_M_head, __trampoline);
     }
 
     template <typename _UnaryOperation>
-    void call(_UnaryOperation&& _Op) {
+    void retire(_UnaryOperation&& _Op) {
       auto* _M_ptr = static_cast<T*>(_M_head->_M_ptr);
       delete _M_head;
       _M_head = new __rcu_head_impl<T, _UnaryOperation>(
@@ -108,7 +108,7 @@ class rcu_ptr {
     ::std::enable_if_t<
       is_rcu_domain_v<_RCUDomain>
     >
-    call(
+    retire(
       _RCUDomain&& _Dom,
       _UnaryOperation&& _Op
     ) {
@@ -118,7 +118,7 @@ class rcu_ptr {
         _M_ptr,
         ::std::forward<_UnaryOperation>(_Op)
       );
-      ::std::forward<_RCUDomain>(_Dom).call(_M_head, rcu_ptr::__trampoline);
+      ::std::forward<_RCUDomain>(_Dom).retire(_M_head, rcu_ptr::__trampoline);
     }
 
     template <
@@ -127,10 +127,10 @@ class rcu_ptr {
     ::std::enable_if_t<
       is_rcu_domain_v<_RCUDomain>
     >
-    call(
+    retire(
       _RCUDomain&& _Dom
     ) {
-      ::std::forward<_RCUDomain>(_Dom).call(_M_head, rcu_ptr::__trampoline);
+      ::std::forward<_RCUDomain>(_Dom).retire(_M_head, rcu_ptr::__trampoline);
     }
 
     //==========================================================================
