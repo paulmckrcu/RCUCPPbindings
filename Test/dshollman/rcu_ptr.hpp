@@ -1,3 +1,4 @@
+#pragma once
 
 #include <type_traits>
 #include <utility> // std::forward
@@ -13,7 +14,6 @@ namespace std { namespace experimental {
 
 using rcu_head = ::rcu_head;
 using rcu_domain = ::std::rcu_domain;
-
 
 void call_rcu(
   rcu_head *_Rhp,
@@ -43,15 +43,15 @@ constexpr bool is_rcu_domain_v = is_rcu_domain<_T>::value;
 //==============================================================================
 // __rcu_head_impl and base class
 
-struct __rcu_head_impl_base : rcu_head {
+struct __rcu_head_impl_base: rcu_head {
   void* _M_ptr;
   virtual void __do_callback() =0;
   virtual ~__rcu_head_impl_base() = default;
-  __rcu_head_impl_base(void* _Ptr) : _M_ptr(_Ptr) { }
+  __rcu_head_impl_base(void* _Ptr): _M_ptr(_Ptr) { }
 };
 
 template <typename _Tp, typename _UnaryOperation>
-struct __rcu_head_impl : __rcu_head_impl_base {
+struct __rcu_head_impl: __rcu_head_impl_base {
 
   __rcu_head_impl(_Tp* _Ptr, _UnaryOperation&& _Op)
     : __rcu_head_impl_base(_Ptr),
@@ -147,7 +147,7 @@ class rcu_ptr {
     template <typename _Up>
     rcu_ptr(_Up* _Ptr,
       ::std::enable_if_t<::std::is_convertible<_Up*, T*>::value, __nat> = __nat{}
-    ) : _M_head(
+    ): _M_head(
           new __rcu_head_impl<T, _DefaultUnaryOperation>(
             _Ptr, _DefaultUnaryOperation{}
           )
@@ -159,7 +159,7 @@ class rcu_ptr {
     rcu_ptr(_Up* _Ptr,
       _UnaryOperation&& _Op,
       ::std::enable_if_t<::std::is_convertible<_Up*, T*>::value, __nat> = __nat{}
-    ) : _M_head(
+    ): _M_head(
           new __rcu_head_impl<T, _UnaryOperation>(
             _Ptr, ::std::forward<_UnaryOperation>(_Op)
           )
@@ -174,5 +174,3 @@ class rcu_ptr {
 };
 
 }} // end namespace std::experimental
-
-

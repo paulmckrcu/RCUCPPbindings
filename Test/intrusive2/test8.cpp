@@ -12,7 +12,7 @@ struct foo {
 		this->rh = this;
 	}
 	int a;
-	class std::rcu_head_ptr<struct foo> rh;
+	std::rcu_head_ptr<foo> rh;
 };
 
 void my_cb(struct foo *fp)
@@ -25,7 +25,7 @@ struct foo foo1(42);
 int main(int argc, char **argv)
 {
 	struct foo *fp;
-	class std::rcu_signal rs;
+	std::rcu_signal rs;
 
 	foo1.rh = &foo1;
 	foo1.rh.retire(my_cb);
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
 	foo1 = 43;
 	foo1.rh = &foo1;
-	foo1.rh.retire([] (struct foo *fp) {
+	foo1.rh.retire([] (foo *fp) {
 			std::cout << "Callback fp->a: " << fp->a << "\n";
 		      });
 	rcu_barrier();

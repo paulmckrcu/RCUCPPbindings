@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <thread>
 #include <atomic>
@@ -5,12 +7,13 @@
 #include <future>
 #include <iostream>
 #include "rcu_domain.hpp"
+
 namespace std {
 
 thread_local int tl_urcu_rv_tid = -1;
 
 /**
- * This is URCU Reader's Version, a Userspace RCU that uses only the C++ 
+ * This is URCU Reader's Version, a Userspace RCU that uses only the C++
  * memory model and atomics, and that allows multiple updaters to share
  * a grace period without having to hold a lock.
  * Based on the original algorithm by Correia and Ramalhete described in
@@ -18,14 +21,14 @@ thread_local int tl_urcu_rv_tid = -1;
  *
  * Reader registration works by doing a CAS in readersVersion[i] from UNASSIGNED
  * to NOT_READING state. Threads always start from i=0 and move forward.
- * I'm sure we can come up with a more flexible ReadIndicator that at the same 
+ * I'm sure we can come up with a more flexible ReadIndicator that at the same
  * time allows for registration, but for the time being its ok.
  *
  * Limitations:
  * - read_lock()/read_unlock() are not reentrant;
  * - The number of registered (reader) threads can not be larger than maxThreads
  * - The retire()/barrier() implementation uses futures and async for simplicity but it is crappy and untested.
- * 
+ *
  *
  */
 class rcu_rv: public rcu_domain {
@@ -41,7 +44,7 @@ class rcu_rv: public rcu_domain {
     std::vector<future<void>> futureList;
 
 public:
-    rcu_rv(const int maxThreads=32) : maxThreads{maxThreads}
+    rcu_rv(const int maxThreads=32): maxThreads{maxThreads}
     {
         readersVersion = new std::atomic<uint64_t>[maxThreads*CLPAD];
         for (int i=0; i < maxThreads; i++) {
@@ -65,7 +68,7 @@ public:
             if (readersVersion[i*CLPAD].compare_exchange_strong(curr, NOT_READING)) {
                  tl_urcu_rv_tid = i;
                  return;
-            }            
+            }
         }
         std::cout << "Error: too many threads already registered\n";
     }
@@ -85,7 +88,7 @@ public:
         const uint64_t rv = reclaimerVersion.load();
         readersVersion[tid*CLPAD].store(rv);
         const uint64_t nrv = reclaimerVersion.load();
-        if (rv != nrv) readersVersion[tid*CLPAD].store(nrv, std::memory_order_relaxed);        
+        if (rv != nrv) readersVersion[tid*CLPAD].store(nrv, std::memory_order_relaxed);
     }
 
     void read_unlock() noexcept
@@ -94,10 +97,7 @@ public:
         readersVersion[tid*CLPAD].store(NOT_READING, std::memory_order_release);
     }
 
-    void synchronize() noexcept
-    {
-        synchronize_tid();
-    }
+    void synchronize() noexcept { synchronize_tid(); }
 
     void synchronize_tid(const int mytid = -1) noexcept
     {
@@ -108,7 +108,7 @@ public:
         for (int i=0; i < maxThreads; i++) {
             // Handle the quiescent_state() case: if it's the same thread, just skip.
             // If there is an error in the program and we were called inside a
-            // block of read_lock()/unlock() then this will cause errors.            
+            // block of read_lock()/unlock() then this will cause errors.
             if (tid == i) continue;
             while (readersVersion[i*CLPAD].load() < waitForVersion) {  // spin
                 // TODO: find a better way to spin... maybe spin a random number of iterations
@@ -118,12 +118,12 @@ public:
         // TODO: Do we need to handle here the waiting callbacks?
     }
 
-    void retire(class rcu_head *rhp, void cbf(class rcu_head *rhp))
+    void retire(rcu_head *rhp, void (*cbf)(rcu_head *rhp))
     {
         const int tid = tl_urcu_rv_tid;
         auto lamb = [&rhp,&cbf,&tid,this]() { synchronize_tid(tid); cbf(rhp); };
         std::future<void> fut = std::async(std::launch::async, lamb);
-        std::lock_guard<std::mutex> lock(listMutex); 
+        std::lock_guard<std::mutex> lock(listMutex);
         futureList.push_back(std::move(fut));
     }
 
@@ -131,22 +131,11 @@ public:
     {
         std::lock_guard<std::mutex> lock(listMutex);
         for (auto& fut : futureList) fut.wait();
-        futureList.clear(); 
+        futureList.clear();
     }
 
-    void quiescent_state() noexcept
-    {
-        read_lock();      
-    }
-
-    void thread_offline() noexcept
-    {
-        read_unlock();
-    }
-
-    void thread_online() noexcept
-    {
-        read_lock();
-    }
+    void quiescent_state() noexcept { read_lock(); }
+    void thread_offline() noexcept { read_unlock(); }
+    void thread_online() noexcept { read_lock(); }
 };
-}
+} // namespace std
