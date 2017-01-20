@@ -85,6 +85,11 @@ WG21/P0190R2 (``Proposal for New \co{memory_order_consume} Definition''),
 and
 WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 
+Specifically, this document proposes
+\co{rcu_domain} (Figure~\ref{fig:RCU Domain Base Class}),
+\co{rcu_guard} (Figure~\ref{fig:RCU Guarded Readers}), and
+\co{rcu_obj_base} (Figure~\ref{fig:RCU Callbacks: Derived-Type Approach}).
+
 Section~\ref{sec:Existing C-Language RCU API} presents the base (C-style) RCU API,
 Section~\ref{sec:RCU Guarded Readers} presents a proposal for scoped RCU readers,
 Section~\ref{sec:RCU Callback Handling} presents proposals for handling of
@@ -678,12 +683,35 @@ For example, small-memory multiprocessor systems might be best-served by
 hazard pointers, while the read-mostly data structures in real-time
 systems might be best-served by RCU.
 
+The relationship between the Hazard Pointers proposal and this RCU
+proposal is as follows:
+
+\begin{enumerate}
+\item	The \co{hazptr_obj_base} class is analogous to \co{rcu_obj_base}.
+\item	The \co{hazptr_domain} class is analogous to \co{rcu_domain}.
+\item	The private \co{hazptr_obj} class is analogous to the pre-existing
+	\co{rcu_head} struct.
+	Because this is a private hazard-pointers class, there is no
+	need to have compatible names.
+\item	There is no RCU class analogous to \co{hazptr_rec} because
+	RCU does not track (or need to track) references to individual
+	RCU-protected objects.
+\item	There is no hazard pointers counterpart to the \co{rcu_guard}
+	class.
+	This is because hazard pointers does not have (or need)
+	a counterpart to \co{rcu_read_lock()} and \co{rcu_read_unlock()}.
+\end{enumerate}
+
 \section{Summary}
 \label{sec:Summary}
 
 This paper demonstrates a way of creating C++ bindings for a C-language
 RCU implementation, which has been tested against the userspace RCU
 library.
+Specifically, this document proposes
+\co{rcu_domain} (Figure~\ref{fig:RCU Domain Base Class}),
+\co{rcu_guard} (Figure~\ref{fig:RCU Guarded Readers}), and
+\co{rcu_obj_base} (Figure~\ref{fig:RCU Callbacks: Derived-Type Approach}).
 We believe that these bindings are also appropriate for the type-oblivious
 C++ RCU implementations that information-hiding considerations are likely
 to favor.
