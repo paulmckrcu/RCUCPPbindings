@@ -1,11 +1,11 @@
 #include <iostream>
 #include <unistd.h>
 #include "urcu-signal.hpp"
-#include "rcu_head_delete.hpp"
+#include "rcu_obj_base.hpp"
 
 // Derived-type approach.
 
-struct foo: public std::rcu_head_delete<foo, void(*)(foo*)> {
+struct foo: public std::rcu_obj_base<foo, void(*)(foo*)> {
     int a;
 };
 
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 {
     std::rcu_signal rs;
 
-    printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_head_delete<foo, void(*)(foo*)>), sizeof(foo));
+    printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo, void(*)(foo*)>), sizeof(foo));
 
     // First with a normal function.
     foo1.a = 42;

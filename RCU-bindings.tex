@@ -363,12 +363,12 @@ are likely to be generally useful.
  1   template<typename T,
  2            typename D = default_delete<T>,
  3            bool E = is_empty<D>::value>
- 4   class rcu_head_delete: private rcu_head {
+ 4   class rcu_obj_base: private rcu_head {
  5     D deleter;
  6   public:
  7     static void trampoline(rcu_head *rhp)
  8     {
- 9       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+ 9       auto rhdp = static_cast<rcu_obj_base *>(rhp);
 10       auto obj = static_cast<T *>(rhdp);
 11       rhdp->deleter(obj);
 12     }
@@ -387,11 +387,11 @@ are likely to be generally useful.
 25   };
 26
 27   template<typename T, typename D>
-28   class rcu_head_delete<T,D,true>: private rcu_head {
+28   class rcu_obj_base<T,D,true>: private rcu_head {
 29   public:
 30     static void trampoline(rcu_head *rhp)
 31     {
-32       auto rhdp = static_cast<rcu_head_delete *>(rhp);
+32       auto rhdp = static_cast<rcu_obj_base *>(rhp);
 33       auto obj = static_cast<T *>(rhdp);
 34       D()(obj);
 35     }
@@ -412,7 +412,7 @@ are likely to be generally useful.
 \label{fig:RCU Callbacks: Derived-Type Approach}
 \end{figure}
 
-The \co{rcu_head_delete} class provides overloaded \co{retire()} methods,
+The \co{rcu_obj_base} class provides overloaded \co{retire()} methods,
 as shown in
 Figure~\ref{fig:RCU Callbacks: Derived-Type Approach}.
 These methods take a deleter and an optional
