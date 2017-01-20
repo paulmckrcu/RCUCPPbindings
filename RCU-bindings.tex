@@ -85,16 +85,16 @@ WG21/P0190R2 (``Proposal for New \co{memory_order_consume} Definition''),
 and
 WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 
-Section~\ref{sec:Base RCU API} presents the base (C-style) RCU API,
-Section~\ref{sec:Scoped Readers} presents a proposal for scoped RCU readers,
+Section~\ref{sec:Existing C-Language RCU API} presents the base (C-style) RCU API,
+Section~\ref{sec:RCU Guarded Readers} presents a proposal for scoped RCU readers,
 Section~\ref{sec:RCU Callback Handling} presents proposals for handling of
 RCU callbacks,
 Section~\ref{sec:Hazard Pointers and RCU: Which to Use?} presents a
 table comparing reference counting, hazard pointers, and RCU, and finally
 Section~\ref{sec:Summary} presents a summary.
 
-\section{Base RCU API}
-\label{sec:Base RCU API}
+\section{Existing C-Language RCU API}
+\label{sec:Existing C-Language RCU API}
 
 \begin{figure}[tbp]
 { \scriptsize
@@ -112,14 +112,14 @@ Section~\ref{sec:Summary} presents a summary.
 11 void std::rcu_thread_online();
 \end{verbatim}
 }
-\caption{Base RCU API}
-\label{fig:Base RCU API}
+\caption{Existing C-Language RCU API}
+\label{fig:Existing C-Language RCU API}
 \end{figure}
 
-Figure~\ref{fig:Base RCU API}
-shows the base RCU API as provided by implementations such as
+Figure~\ref{fig:Existing C-Language RCU API}
+shows the existing C-language RCU API as provided by implementations such as
 userspace RCU~\cite{MathieuDesnoyers2009URCU,PaulMcKenney2013LWNURCU}.
-This API is provided for compatibility with existing practice as
+This API is provided for compatibility with existing C-language practice as
 well as to provide the highest performance for fast-path code.
 (See Figure~\ref{fig:RCU Domain Base Class} for a proposed API that
 permits multiple RCU domains, as requested by several committee members.)
@@ -278,33 +278,33 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 % @@@ Of course, additional implementations of RCU may be constructed by
 % @@@ deriving from \co{rcu_domain} and/or by implementing the API
 % @@@ shown in
-% @@@ Figure~\ref{fig:Base RCU API}.
+% @@@ Figure~\ref{fig:Existing C-Language RCU API}.
 
-\section{Scoped Readers}
-\label{sec:Scoped Readers}
+\section{RCU Guarded Readers}
+\label{sec:RCU Guarded Readers}
 
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   class rcu_scoped_reader {
+ 1   class rcu_guard {
  2   public:
- 3     rcu_scoped_reader() noexcept
+ 3     rcu_guard() noexcept
  4     {
  5       this->rd = nullptr;
  6       rcu_read_lock();
  7     }
  8
- 9     explicit rcu_scoped_reader(rcu_domain *rd)
+ 9     explicit rcu_guard(rcu_domain *rd)
 10     {
 11       this->rd = rd;
 12       rd->read_lock();
 13     }
 14
-15     rcu_scoped_reader(const rcu_scoped_reader &) = delete;
+15     rcu_guard(const rcu_guard &) = delete;
 16
-17     rcu_scoped_reader&operator=(const rcu_scoped_reader &) = delete;
+17     rcu_guard&operator=(const rcu_guard &) = delete;
 18
-19     ~rcu_scoped_reader() noexcept
+19     ~rcu_guard() noexcept
 20     {
 21       if (this->rd)
 22         this->rd->read_unlock();
@@ -317,8 +317,8 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 29   };
 \end{verbatim}
 }
-\caption{RCU Scoped Readers}
-\label{fig:RCU Scoped Readers}
+\caption{RCU Guarded Readers}
+\label{fig:RCU Guarded Readers}
 \end{figure}
 
 @@@ This section needs to be replaced by adding shared-lock semantics
@@ -327,8 +327,8 @@ the 2016 Issaquah meeting. @@@
 
 In some cases, it might be convenient to use a scoped style for RCU readers,
 especially if the read-side critical section might be exited via exception.
-The \co{rcu_scoped_reader} class shown in
-Figure~\ref{fig:RCU Scoped Readers}
+The \co{rcu_guard} class shown in
+Figure~\ref{fig:RCU Guarded Readers}
 may be used for this purpose.
 An argumentless constructor uses the API, or an \co{rcu_domain} class
 may be passed to the constructor to use the specified RCU
