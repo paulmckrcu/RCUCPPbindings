@@ -88,7 +88,8 @@ WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 Section~\ref{sec:Existing C-Language RCU API} presents the base (C-style) RCU API,
 Section~\ref{sec:RCU Guarded Readers} presents a proposal for scoped RCU readers,
 Section~\ref{sec:RCU Callback Handling} presents proposals for handling of
-RCU callbacks,
+RCU callbacks (with that of
+Section~\ref{sec:Derived-Type Approach} being the preferred implementation),
 Section~\ref{sec:Hazard Pointers and RCU: Which to Use?} presents a
 table comparing reference counting, hazard pointers, and RCU, and finally
 Section~\ref{sec:Summary} presents a summary.
@@ -275,10 +276,10 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 \item	Signal-based RCU: \co{class rcu_signal}
 \end{itemize}
 
-% @@@ Of course, additional implementations of RCU may be constructed by
-% @@@ deriving from \co{rcu_domain} and/or by implementing the API
-% @@@ shown in
-% @@@ Figure~\ref{fig:Existing C-Language RCU API}.
+Of course, additional implementations of RCU may be constructed by
+deriving from \co{rcu_domain} and/or by implementing the API
+shown in
+Figure~\ref{fig:Existing C-Language RCU API}.
 
 \section{RCU Guarded Readers}
 \label{sec:RCU Guarded Readers}
@@ -321,11 +322,7 @@ Each domain creates a concrete subclass that implements its RCU APIs:
 \label{fig:RCU Guarded Readers}
 \end{figure}
 
-@@@ This section needs to be replaced by adding shared-lock semantics
-to \co{rcu_read_lock()} and \co{rcu_read_unlock()}, as discussed at
-the 2016 Issaquah meeting. @@@
-
-In some cases, it might be convenient to use a scoped style for RCU readers,
+In some cases, it might be convenient to use a guard style for RCU readers,
 especially if the read-side critical section might be exited via exception.
 The \co{rcu_guard} class shown in
 Figure~\ref{fig:RCU Guarded Readers}
@@ -349,10 +346,17 @@ which has the benefit of avoiding macros and providing better type safety.
 This will not be an either-or situation: Several of these approaches
 are likely to be generally useful.
 
-\subsection{Non-Intrusive Implementation}
-\label{sec:Non-Intrusive Implementation}
-
-@@@ David Holman implementation here @@@
+However, the approach discussed in
+Section~\ref{sec:Derived-Type Approach}
+is the preferred approach, and is compatible with the proposal for
+hazard pointers.
+The approaches in the other sections are presented for informational
+purposes:
+Section~\ref{sec:Pointer To Enclosing Class}
+uses a pointer to an enclosing type and
+Section ~\ref{sec:Address Arithmetic}
+uses address arithmetic (illustrating the C-language approach used in
+the Linux kernel).
 
 \subsection{Derived-Type Approach}
 \label{sec:Derived-Type Approach}
