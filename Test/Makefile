@@ -15,8 +15,10 @@
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
 PROGS = test1 test2 test3 test4 test5 test6 test7 test8
+#PROGS = test2 test3 test4 test5 test6 test7 test8
 
 CXXFLAGS = -g -std=c++1z
+#CXXFLAGS = -g -std=c++11
 
 ifeq ($(shell uname),Darwin)
   # This is where "brew install userspace-rcu" installs the headers and archives on OS X 10.11.
