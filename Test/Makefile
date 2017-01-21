@@ -14,8 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = test1 test2 test3 test4 test5 test6 test7 test8
-#PROGS = test2 test3 test4 test5 test6 test7 test8
+PROGS = test1a test1d test2 test3 test4 test5 test6 test7 test8
 
 CXXFLAGS = -g -std=c++1z
 #CXXFLAGS = -g -std=c++11
@@ -39,8 +38,11 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-test1: dshollman/test1.cpp
-	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
+test1a: test1.cpp
+	$(CXX) $(CXXFLAGS) -DIMP_DSHOLLMAN=1 -I./dshollman -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
+
+test1d: test1.cpp
+	$(CXX) $(CXXFLAGS) -DIMP_AJODWYER=1 -I./ajodwyer -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
 test2: ajodwyer/test2.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
