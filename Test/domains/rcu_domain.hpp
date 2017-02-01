@@ -5,6 +5,11 @@ extern "C" struct rcu_head;
 namespace std {
     class rcu_domain {
     public:
+	constexpr explicit rcu_domain() noexcept { };
+	rcu_domain(const rcu_domain&) = delete;
+	rcu_domain(rcu_domain&&) = delete;
+	rcu_domain& operator=(const rcu_domain&) = delete;
+	rcu_domain& operator=(rcu_domain&&) = delete;
         virtual void register_thread() = 0;
         virtual void unregister_thread() = 0;
         virtual void read_lock() noexcept = 0;
