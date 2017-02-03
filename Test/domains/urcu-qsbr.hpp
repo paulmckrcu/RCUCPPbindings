@@ -18,5 +18,6 @@ public:
         void quiescent_state() noexcept { rcu_quiescent_state(); }
         void thread_offline() noexcept { rcu_thread_offline(); }
         void thread_online() noexcept { rcu_thread_online(); }
+	static bool quiescent_state_needed() { return true; }
     };
 } // namespace std
