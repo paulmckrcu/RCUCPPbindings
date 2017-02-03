@@ -734,16 +734,36 @@ We are grateful to Jim Wasko for his support of this effort.
 \bibliographystyle{acm}
 \bibliography{bib/RCU,bib/WFS,bib/hw,bib/os,bib/parallelsys,bib/patterns,bib/perfmeas,bib/refs,bib/syncrefs,bib/search,bib/swtools,bib/realtime,bib/TM,bib/standards,bib/maze}
 
-% \section*{Change Log}
-% \label{sec:Change Log}
+\section*{Change Log}
+\label{sec:Change Log}
 
-% This paper first appeared as {\bf N4026} in May of 2014.
-% Revisions to this document are as follows:
+This paper first appeared as {\bf P0461R0} in October of 2016.
+Revisions to this document are as follows:
 
-% \begin{itemize}
-% \item	Mark the paper as a revision of N4036.
-% 	(July 17, 2014.)
-% \end{itemize}
+\begin{itemize}
+\item	Convert to single-column mode.
+	(November 16, 2016.)
+\item	Change \co{call()} to \co{retire()} for hazard-pointer compatibility.
+	(January 4, 2017.)
+\item	Change \co{rcu_scoped_reader} to \co{rcu_guard} for compatibility
+	with existing RAII mechanisms.
+	(January 19, 2017.)
+\item	Change \co{rcu_head_delete} to \co{rcu_obj_base} for compatibility
+	with hazard pointers.
+	(January 19, 2017.)
+\item	Update to indicate preferred C++ RCU approach.
+	(January 19, 2017.)
+\item	Call out relationships between classes for RCU and for hazard
+	pointers.
+	(January 19, 2017.)
+\item	Add constructors to \co{rcu_domain} to match those of
+	\co{hazptr_domain}.
+	(February 1, 2017.)
+\item	Add \co{quiescent_state_needed()} member function to
+	\co{rcu_domain} to allow code using RCU to complain if
+	its requirements are not met.
+	(February 3, 2017.)
+\end{itemize}
 
 % At this point, the paper was published as {\bf P0098R1}.
 
