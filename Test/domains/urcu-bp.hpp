@@ -19,6 +19,6 @@ namespace std {
         void thread_offline() noexcept { rcu_thread_offline(); }
         void thread_online() noexcept { rcu_thread_online(); }
 
-        static bool register_thread_needed() { return false; }
+        static constexpr bool register_thread_needed() { return false; }
     };
 } // namespace std

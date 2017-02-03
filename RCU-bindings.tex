@@ -257,11 +257,11 @@ Such applications or libraries use \co{#include urcu-bp.hpp} and
  7   rcu_domain& operator=(rcu_domain&&) = delete;
  8   virtual void register_thread() = 0;
  9   virtual void unregister_thread() = 0;
-10   static bool register_thread_needed() { return true; }
+10   static constexpr bool register_thread_needed() { return true; }
 11   virtual void quiescent_state() noexcept = 0;
 12   virtual void thread_offline() noexcept = 0;
 13   virtual void thread_online() noexcept = 0;
-14   static bool quiescent_state_needed() { return false; }
+14   static constexpr bool quiescent_state_needed() { return false; }
 15   virtual void read_lock() noexcept = 0;
 16   virtual void read_unlock() noexcept = 0;
 17   virtual void synchronize() noexcept = 0;

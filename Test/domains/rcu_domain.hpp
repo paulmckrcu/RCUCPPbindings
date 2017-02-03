@@ -12,11 +12,11 @@ namespace std {
 	rcu_domain& operator=(rcu_domain&&) = delete;
 	virtual void register_thread() = 0;
 	virtual void unregister_thread() = 0;
-	static bool register_thread_needed() { return true; }
+	static constexpr bool register_thread_needed() { return true; }
 	virtual void quiescent_state() noexcept = 0;
 	virtual void thread_offline() noexcept = 0;
 	virtual void thread_online() noexcept = 0;
-	static bool quiescent_state_needed() { return false; }
+	static constexpr bool quiescent_state_needed() { return false; }
 	virtual void read_lock() noexcept = 0;
 	virtual void read_unlock() noexcept = 0;
 	virtual void synchronize() noexcept = 0;
