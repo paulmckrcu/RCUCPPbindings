@@ -250,20 +250,24 @@ Such applications or libraries use \co{#include urcu-bp.hpp} and
 \begin{verbatim}
  1 class rcu_domain {
  2 public:
- 3   virtual void register_thread() = 0;
- 4   virtual void unregister_thread() = 0;
- 5   static inline bool register_thread_needed()
- 6           { return true; }
- 7   virtual void read_lock() noexcept = 0;
- 8   virtual void read_unlock() noexcept = 0;
- 9   virtual void synchronize() noexcept = 0;
-10   virtual void retire(class rcu_head *rhp,
-11         void cbf(class rcu_head *rhp)) = 0;
-12   virtual void barrier() noexcept = 0;
-13   virtual void quiescent_state() noexcept = 0;
-14   virtual void thread_offline() noexcept = 0;
-15   virtual void thread_online() noexcept = 0;
-16 };
+ 3   constexpr explicit rcu_domain() noexcept { };
+ 4   rcu_domain(const rcu_domain&) = delete;
+ 5   rcu_domain(rcu_domain&&) = delete;
+ 6   rcu_domain& operator=(const rcu_domain&) = delete;
+ 7   rcu_domain& operator=(rcu_domain&&) = delete;
+ 8   virtual void register_thread() = 0;
+ 9   virtual void unregister_thread() = 0;
+10   static bool register_thread_needed() { return true; }
+11   virtual void quiescent_state() noexcept = 0;
+12   virtual void thread_offline() noexcept = 0;
+13   virtual void thread_online() noexcept = 0;
+14   static bool quiescent_state_needed() { return false; }
+15   virtual void read_lock() noexcept = 0;
+16   virtual void read_unlock() noexcept = 0;
+17   virtual void synchronize() noexcept = 0;
+18   virtual void retire(rcu_head *rhp, void (*cbf)(rcu_head *rhp)) = 0;
+19   virtual void barrier() noexcept = 0;
+20 };
 \end{verbatim}
 }
 \caption{RCU Domain Base Class}
