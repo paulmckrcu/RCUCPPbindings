@@ -68,11 +68,28 @@ WG21/P0232R0\cite{PaulEMcKennneyToolKitP0232R0}.
 Note that this proposal is related to the hazard-pointer proposal in
 that both proposals defer destructive actions such as reclamation until
 all readers have completed.
+See P0233R3, which updates ``P0233R2: Hazard Pointers:
+Safe Resource Reclamation for Optimistic Concurrency''
+at \url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0233r2.pdf}.
 
 Note also that a redefinition of the infamous \co{memory_order_consume}
-is the subject of a separate paper.
-% A detailed change log appears starting on
-% page~\pageref{sec:Change Log}.
+is the subject of two separate papers:
+
+\begin{enumerate}
+\item	P0190R3, which updates
+	``P0190R2: Proposal for New \co{memory_order_consume} Definition'',
+	\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0190r2.pdf}.
+\item	P0462R1, which updates
+	``P0462R0: Marking \co{memory_order_consume} Dependency Chains'',
+	\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0462r0.pdf}.
+\end{enumerate}
+
+Draft wording for this proposal may be found in the new working paper
+``P0566R0: Proposed Wording for Concurrent Data Structures: Hazard
+Pointer and Read-Copy-Update (RCU)''.
+
+A detailed change log appears starting on
+page~\pageref{sec:Change Log}.
 
 \section{Introduction}
 \label{sec:Introduction}
@@ -764,9 +781,11 @@ Revisions to this document are as follows:
 	its requirements are not met, based on discussions with
 	Geoffrey Romer and Andrew Hunter.
 	(February 3, 2017.)
+\item	Added references to related papers.
+	(February 5, 2017.)
 \end{itemize}
 
-% At this point, the paper was published as {\bf P0098R1}.
+At this point, the paper was published as {\bf P0461R1}.
 
 \end{document}
 
