@@ -384,7 +384,7 @@ Section ~\ref{sec:Address Arithmetic}
 uses address arithmetic (illustrating the C-language approach used in
 the Linux kernel).
 
-\subsection{Derived-Type Approach}
+\subsection{Derived-Type Approach (Preferred)}
 \label{sec:Derived-Type Approach}
 
 \begin{figure}[tbp]
@@ -438,7 +438,7 @@ the Linux kernel).
 46   };
 \end{verbatim}
 }
-\caption{RCU Callbacks: Derived-Type Approach}
+\caption{RCU Callbacks: Derived-Type Approach (Preferred)}
 \label{fig:RCU Callbacks: Derived-Type Approach}
 \end{figure}
 
@@ -461,10 +461,13 @@ If an \co{rcu_domain} is supplied, its \co{retire()}
 member function is used, otherwise the \co{call_rcu()} free
 function is used.
 
+Please note that this is the preferred approach, and is being proposed
+for standardization.
+
 The next section provides a specialization that only permits \co{delete},
 which allows omitting the deleter, thus saving a bit of memory.
 
-\subsection{Pointer To Enclosing Class}
+\subsection{Pointer To Enclosing Class (Informational Only)}
 \label{sec:Pointer To Enclosing Class}
 
 \begin{figure}[tbp]
@@ -515,7 +518,7 @@ which allows omitting the deleter, thus saving a bit of memory.
 43   };
 \end{verbatim}
 }
-\caption{RCU Callbacks: Pointer}
+\caption{RCU Callbacks: Pointer (Informational Only)}
 \label{fig:RCU Callbacks: Pointer}
 \end{figure}
 
@@ -536,7 +539,10 @@ As with the previous classes, omitting the deleter results
 in the object being passed to \co{delete} and an \co{rcu_domain}
 object may be specified.
 
-\subsection{Address Arithmetic}
+Please note that this section is informational only: This approach
+is \emph{not} being proposed for standardization.
+
+\subsection{Address Arithmetic (Informational Only)}
 \label{sec:Address Arithmetic}
 
 \begin{figure}[tbp]
@@ -566,7 +572,7 @@ object may be specified.
 22   size_t rcu_head_container_of<T>::rh_offset;
 \end{verbatim}
 }
-\caption{RCU Callbacks: Address Arithmetic}
+\caption{RCU Callbacks: Address Arithmetic (Informational Only)}
 \label{fig:RCU Callbacks: Address Arithmetic}
 \end{figure}
 
@@ -591,13 +597,16 @@ applies that offset to translate a pointer to the
  7 }
 \end{verbatim}
 }
-\caption{RCU Callbacks: Address Arithmetic in Callback}
+\caption{RCU Callbacks: Address Arithmetic in Callback (Informational Only)}
 \label{fig:RCU Callbacks: Address Arithmetic in Callback}
 \end{figure*}
 
 This address arithmetic must be carried out in the callback function,
 as shown in
 Figure~\ref{fig:RCU Callbacks: Address Arithmetic in Callback}.
+
+Please note that this section is informational only: This approach
+is \emph{not} being proposed for standardization.
 
 \section{Hazard Pointers and RCU: Which to Use?}
 \label{sec:Hazard Pointers and RCU: Which to Use?}
