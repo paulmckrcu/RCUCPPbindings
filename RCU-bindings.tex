@@ -29,10 +29,10 @@
 }
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
-\title{P0461R1: Proposed RCU C++ API}
+\title{P0461R2: Proposed RCU C++ API}
 
 \author{
-{\bf Doc. No.: } WG21/P0461R1 \\
+{\bf Doc. No.: } WG21/P0461R2 \\
 {\bf Date: } 2017-02-07 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, Arthur O'Dwyer, and David Hollman \\
@@ -46,14 +46,15 @@ arthur.j.odwyer@gmail.com, and dshollm@sandia.gov
 %\thispagestyle{empty}
 
 \pagestyle{myheadings}
-\markright{WG21/P0461R1}
+\markright{WG21/P0461R2}
 
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 This document is based on WG21/P0279R1 combined with feedback at
-the 2015 Kona and 2016 Jacksonville meetings, which most notably called
+the 2015 Kona, 2016 Jacksonville, 2016 Issaquah, and 2017 Kona meetings,
+which most notably called
 for a C++-style method of handling different RCU implementations or
 domains within a single translation unit, and which also contains
 useful background material and references.
@@ -71,6 +72,12 @@ all readers have completed.
 See P0233R3, which updates ``P0233R2: Hazard Pointers:
 Safe Resource Reclamation for Optimistic Concurrency''
 at \url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0233r2.pdf}.
+
+This proposal is also related to ``P0561R0 An RAII Interface for Deferred
+Reclamation'' at
+\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0561r0.html}.
+This RAII proposal has replaced the C++ wrapper APIs that appeared in
+earlier revisions of this document.
 
 Note also that a redefinition of the infamous \co{memory_order_consume}
 is the subject of two separate papers:
@@ -795,6 +802,13 @@ Revisions to this document are as follows:
 \end{itemize}
 
 At this point, the paper was published as {\bf P0461R1}.
+
+Further revisions to this document are as follows:
+
+\begin{itemize}
+\item	@@@
+	(March 2, 2017.)
+\end{itemize}
 
 \end{document}
 
