@@ -1,17 +1,17 @@
 #pragma once
 
-#include "rcu_domain.hpp"
+#include "rcu_flavor_base.hpp"
 
 #include <urcu-qsbr.h>
 #define _LGPL_SOURCE
 
 namespace std {
-    class rcu_qsbr: public rcu_domain {
+    class rcu_qsbr: public rcu_flavor_base {
 public:
         void register_thread() { rcu_register_thread(); }
         void unregister_thread() { rcu_unregister_thread(); }
-        void read_lock() noexcept { rcu_read_lock(); }
-        void read_unlock() noexcept { rcu_read_unlock(); }
+        cookie_t read_lock() noexcept { rcu_read_lock(); }
+        void read_unlock(cookie_t c) noexcept { rcu_read_unlock(); }
         void synchronize() noexcept { synchronize_rcu(); }
         void retire(rcu_head *rhp, void (*cbf)(rcu_head *rhp)) { call_rcu(rhp, cbf); }
         void barrier() noexcept { rcu_barrier(); }

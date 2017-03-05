@@ -6,7 +6,7 @@
 #include <vector>
 #include <future>
 #include <iostream>
-#include "rcu_domain.hpp"
+#include "rcu_flavor_base.hpp"
 
 namespace std {
 
@@ -31,7 +31,7 @@ thread_local int tl_urcu_rv_tid = -1;
  *
  *
  */
-class rcu_rv: public rcu_domain {
+class rcu_rv: public rcu_flavor_base {
 
     static const int CLPAD = (128/sizeof(uint64_t));
     static const uint64_t NOT_READING = 0xFFFFFFFFFFFFFFFE;
@@ -82,16 +82,17 @@ public:
         readersVersion[tl_urcu_rv_tid*CLPAD].store(UNASSIGNED);
     }
 
-    void read_lock() noexcept
+    cookie_t read_lock() noexcept
     {
         const int tid = tl_urcu_rv_tid;
         const uint64_t rv = reclaimerVersion.load();
         readersVersion[tid*CLPAD].store(rv);
         const uint64_t nrv = reclaimerVersion.load();
         if (rv != nrv) readersVersion[tid*CLPAD].store(nrv, std::memory_order_relaxed);
+	return 0;
     }
 
-    void read_unlock() noexcept
+    void read_unlock(cookie_t c) noexcept
     {
         const int tid = tl_urcu_rv_tid;
         readersVersion[tid*CLPAD].store(NOT_READING, std::memory_order_release);
@@ -134,8 +135,8 @@ public:
         futureList.clear();
     }
 
-    void quiescent_state() noexcept { read_lock(); }
-    void thread_offline() noexcept { read_unlock(); }
-    void thread_online() noexcept { read_lock(); }
+    void quiescent_state() noexcept { (void)read_lock(); }
+    void thread_offline() noexcept { read_unlock(0); }
+    void thread_online() noexcept { (void)read_lock(); }
 };
 } // namespace std

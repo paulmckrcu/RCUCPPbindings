@@ -14,8 +14,8 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = test1 test2 test3 test4 test5 test6 test7 test8
-#PROGS = test2 test3 test4 test5 test6 test7 test8
+PROGS = test1 test4 test5 test6 test7 test8
+#PROGS = test1 test4 test5 test6 test7 test8
 
 CXXFLAGS = -g -std=c++1z
 #CXXFLAGS = -g -std=c++11
@@ -51,8 +51,8 @@ test3: ajodwyer/test3.cpp
 test4: test4.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-test5: domains/test5.cpp domains/test5b.cpp domains/test5m.cpp domains/test5q.cpp domains/test5s.cpp domains/test5v.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread -lurcu -lurcu-bp -lurcu-mb -lurcu-qsbr -lurcu-signal
+test5: domains/test5.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-bp
 
 test6: imuerte/test6.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
