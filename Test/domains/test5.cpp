@@ -1,8 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
-/* #include <urcu.h> */
-#include "urcu-bp.hpp"
+#include "urcu-signal.hpp"
 #include "urcu-rv.hpp"
 
 struct foo {
@@ -33,7 +32,7 @@ void synchronize_rcu_abstract(_T &p, std::string s)
 	p.unregister_thread();
 }
 
-std::rcu_bp rb;
+std::rcu_signal rs;
 std::rcu_rv rv;
 
 int main()
@@ -47,6 +46,6 @@ int main()
 	rcu_barrier();
 	rcu_unregister_thread();
 
-	synchronize_rcu_abstract(rb, "Derived class rcu_bp");
+	synchronize_rcu_abstract(rs, "Derived class rcu_signal");
 	synchronize_rcu_abstract(rv, "Derived class rcu_rv");
 }
