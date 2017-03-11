@@ -23,7 +23,7 @@ namespace std {
             });
         }
 
-        void retire(rcu_flavor_base& rd) {
+        void retire(rcu_domain& rd) {
             rd.retire(this, +[] (rcu_head * rhp) {
                 auto self = static_cast<T*>(rhp);
                 self->get_deleter()(self);
