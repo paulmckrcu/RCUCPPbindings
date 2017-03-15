@@ -1,6 +1,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <vector>
 #include "urcu-signal.hpp"
 #include "rcu_cell.hpp"
 
@@ -65,7 +66,7 @@ void test_thread_safety()
     std::rcu::cell<A> c(std::make_unique<A>(0));
     std::thread t[100];
     for (int i=0; i < 100; ++i) {
-        t[i] = std::thread([&]{
+        t[i] = std::thread([i, &c]{
             c.update(std::make_unique<A>(i));
             auto sp1 = c.get_snapshot();
             c.update(std::make_unique<A>(100+i));
@@ -84,15 +85,57 @@ void test_thread_safety()
     assert(sp->value >= 200);
 }
 
+void test_non_race_free_type()
+{
+    static auto get_next_value = []{
+        static std::atomic<int> x(0);
+        return ++x;
+    };
+    static auto the_zero_vector = []{
+        return std::make_unique<std::vector<A>>(10, A(0));
+    };
+    static auto print_vector = [](const auto& c){
+        static std::mutex m;
+        std::lock_guard<std::mutex> lock(m);  // Just to avoid interleaving output.
+        auto sp = c.get_snapshot();
+        for (int i=0; i < sp->size(); ++i) {
+            printf("%d ", (*sp)[i].value);
+        }
+        printf("\n");
+    };
+    std::rcu::cell<std::vector<A>> c(the_zero_vector());
+    std::thread t[10];
+    for (int i=0; i < 10; ++i) {
+        t[i] = std::thread([i, &c]{
+            int result = get_next_value();
+            if (result == 3) {
+                // Zero the whole vector, thread-safely.
+                c.update(the_zero_vector());
+            } else {
+                // Update only my own element of the vector.
+                auto sp = c.get_snapshot();
+                (*sp)[i] = A(result);
+            }
+            print_vector(c);
+        });
+    }
+    for (int i=0; i < 10; ++i) {
+        t[i].join();
+    }
+    print_vector(c);
+}
+
 int main(int argc, char **argv)
 {
     test_simple();
-    rcu_barrier(); printf("%d\n", (int)A::live_objects);
+    rcu_barrier(); assert(A::live_objects == 0);
     test_outliving();
-    rcu_barrier(); printf("%d\n", (int)A::live_objects);
+    rcu_barrier(); assert(A::live_objects == 0);
     test_shared_ptr();
-    rcu_barrier(); printf("%d\n", (int)A::live_objects);
+    rcu_barrier(); assert(A::live_objects == 0);
     test_thread_safety();
-    rcu_barrier(); printf("%d\n", (int)A::live_objects);
+    rcu_barrier(); assert(A::live_objects == 0);
+    test_non_race_free_type();
+    rcu_barrier(); assert(A::live_objects == 0);
     return 0;
 }
