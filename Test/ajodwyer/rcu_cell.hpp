@@ -76,9 +76,9 @@ class cell {
     cell& operator=(cell&&) = delete;
     cell& operator=(const cell&) = delete;
 
-    cell(nullptr_t = nullptr, const Alloc& alloc = Alloc()) : cb(nullptr), a(alloc) {}
-
-    cell(std::unique_ptr<T> u, Alloc alloc = Alloc()) : a(alloc) {
+    cell() : cb(nullptr), a(Alloc()) {}
+    explicit cell(nullptr_t, Alloc alloc = Alloc()) : cb(nullptr), a(std::move(alloc)) {}
+    explicit cell(std::unique_ptr<T> u, Alloc alloc = Alloc()) : a(std::move(alloc)) {
         control_block *new_cb = std::allocator_traits<cb_allocator>::allocate(a, 1);
         std::allocator_traits<cb_allocator>::construct(a, new_cb, u.release(), a);
         cb = new_cb;
@@ -129,7 +129,7 @@ class snapshot_ptr {
     }
 
   public:
-    snapshot_ptr(snapshot_ptr&& rhs) : ptr(rhs.ptr) {
+    constexpr snapshot_ptr(snapshot_ptr&& rhs) : ptr(rhs.ptr) {
         rhs.ptr = nullptr;
     }
     snapshot_ptr& operator=(snapshot_ptr&& rhs) {
@@ -148,7 +148,8 @@ class snapshot_ptr {
         }
     }
 
-    constexpr snapshot_ptr(nullptr_t = nullptr) : ptr(nullptr) {}
+    constexpr snapshot_ptr() : ptr(nullptr) {}
+    constexpr snapshot_ptr(nullptr_t) : ptr(nullptr) {}
 
     // Converting operations, enabled if U* is convertible to T*
     template <typename U, typename = std::enable_if_t<std::is_convertible<U*,T*>::value>>
