@@ -12,7 +12,7 @@ struct foo: public std::rcu_obj_base<foo> {
 int main(int argc, char **argv)
 {
     struct foo *fp = new struct foo;
-    std::rcu_signal rs;
+    rcu_domain_signal rs;
 
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo>), sizeof(foo));
 

@@ -25,7 +25,7 @@ struct foo foo1(42);
 int main(int argc, char **argv)
 {
 	struct foo *fp;
-	std::rcu_signal rs;
+	rcu_domain_signal rs;
 
 	foo1.rh = &foo1;
 	foo1.rh.retire(my_cb);

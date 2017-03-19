@@ -23,7 +23,8 @@ namespace std {
             });
         }
 
-        void retire(rcu_domain& rd) {
+        template<class RcuDomain>
+        void retire(RcuDomain& rd) {
             rd.retire(this, +[] (rcu_head * rhp) {
                 auto self = static_cast<T*>(rhp);
                 self->get_deleter()(self);
