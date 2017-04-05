@@ -25,8 +25,10 @@ namespace rcu {
 // or is the result of invoking get_snapshot() on an empty cell. In particular,
 // a snapshot_ptr<T> cannot spontaneously become null due to the actions of other
 // threads. The guarantee that the object is live means that calling get_snapshot()
-// is equivalent to acquiring a reader lock, and destroying the resulting
-// snapshot_ptr<T> is equivalent to releasing the reader lock.
+// is equivalent to incrementing the reference count on the controlled object,
+// and destroying the resulting snapshot_ptr<T> is equivalent to decrementing
+// the reference count. The controlled object is retired when the reference count
+// reaches zero.
 
 // P0561R0 "An RAII Interface for Deferred Reclamation" (Geoff Romer and Andrew Hunter)
 // describes these abstractions. It also proposes a type trait is_race_free_v<T>
@@ -62,7 +64,7 @@ class cell {
     using control_block = detail::cell_control_block<T, Alloc>;
     using cb_allocator = typename std::allocator_traits<Alloc>::template rebind_alloc<control_block>;
     using cb_pointer = typename std::allocator_traits<cb_allocator>::pointer;
-    std::atomic<control_block *> cb;
+    std::shared_ptr<control_block> cb;
     cb_allocator a;
 
     static_assert(std::is_same<
@@ -81,17 +83,12 @@ class cell {
     explicit cell(std::unique_ptr<T> u, Alloc alloc = Alloc()) : a(std::move(alloc)) {
         control_block *new_cb = std::allocator_traits<cb_allocator>::allocate(a, 1);
         std::allocator_traits<cb_allocator>::construct(a, new_cb, u.release(), a);
-        cb = new_cb;
-    }
-    ~cell() {
-        control_block *old_cb = cb;
-        if (old_cb) old_cb->retire();
+        cb = std::shared_ptr<control_block>(new_cb, [](control_block *p) { p->retire(); });
     }
 
     void update(nullptr_t) {
         // "Update" the cell to become "empty", which means to abandon (retire) it.
-        control_block *old_cb = cb.exchange(nullptr);
-        if (old_cb) old_cb->retire();
+        std::atomic_store(&cb, decltype(cb)(nullptr));
     }
 
     void update(unique_ptr<T> u) {
@@ -102,19 +99,18 @@ class cell {
         } else {
             control_block *new_cb = std::allocator_traits<cb_allocator>::allocate(a, 1);
             std::allocator_traits<cb_allocator>::construct(a, new_cb, u.release(), a);
-            control_block *old_cb = cb.exchange(new_cb);
-            if (old_cb) old_cb->retire();
+            std::shared_ptr<control_block> sptr(new_cb, [](control_block *p) { p->retire(); });
+            std::atomic_store(&cb, sptr);
         }
     }
 
     snapshot_ptr<T> get_snapshot() const {
-        ::rcu_read_lock();
-        control_block *old_cb = cb;
+        std::shared_ptr<control_block> old_cb = std::atomic_load(&cb);
         if (old_cb) {
-            return snapshot_ptr<T>(old_cb->t);
+            std::shared_ptr<T> ptr(old_cb, old_cb->t);
+            return snapshot_ptr<T>(std::move(ptr));
         } else {
-            ::rcu_read_unlock();
-            return nullptr;
+            return snapshot_ptr<T>(nullptr);
         }
     }
 };
@@ -122,68 +118,38 @@ class cell {
 template <typename T>
 class snapshot_ptr {
     friend class cell<T>;
-    T *ptr;
 
-    explicit snapshot_ptr(T *p) : ptr(p) {
-        assert(p != nullptr);
-    }
+    std::shared_ptr<T> ptr;
+
+    explicit snapshot_ptr(std::shared_ptr<T> p) : ptr(std::move(p)) {}
 
   public:
-    constexpr snapshot_ptr(snapshot_ptr&& rhs) : ptr(rhs.ptr) {
-        rhs.ptr = nullptr;
-    }
-    snapshot_ptr& operator=(snapshot_ptr&& rhs) {
-        if (ptr) {
-            ::rcu_read_unlock();
-        }
-        ptr = rhs.ptr;
-        rhs.ptr = nullptr;
-        return *this;
-    }
+    constexpr snapshot_ptr(snapshot_ptr&&) = default;
+    snapshot_ptr& operator=(snapshot_ptr&&) = default;
     snapshot_ptr(const snapshot_ptr&) = delete;
     snapshot_ptr& operator=(const snapshot_ptr&) = delete;
-    ~snapshot_ptr() {
-        if (ptr) {
-            ::rcu_read_unlock();
-        }
-    }
+    ~snapshot_ptr() = default;
 
-    constexpr snapshot_ptr() : ptr(nullptr) {}
-    constexpr snapshot_ptr(nullptr_t) : ptr(nullptr) {}
+    constexpr snapshot_ptr() = default;
+    constexpr snapshot_ptr(nullptr_t) {}
 
     // Converting operations, enabled if U* is convertible to T*
     template <typename U, typename = std::enable_if_t<std::is_convertible<U*,T*>::value>>
-    snapshot_ptr(snapshot_ptr<U>&& rhs) noexcept : ptr(rhs.ptr) {
-        rhs.ptr = nullptr;
-    }
+    snapshot_ptr(snapshot_ptr<U>&& rhs) noexcept : ptr(std::move(rhs.ptr)) {}
+
     template <typename U, typename = std::enable_if_t<std::is_convertible<U*,T*>::value>>
     snapshot_ptr& operator=(snapshot_ptr<U>&& rhs) noexcept {
-        if (ptr) {
-            ::rcu_read_unlock();
-        }
-        ptr = rhs.ptr;
-        rhs.ptr = nullptr;
+        ptr = std::move(rhs.ptr);
         return *this;
     }
 
-    T* get() const noexcept { return ptr; }
+    T* get() const noexcept { return ptr.get(); }
     T& operator*() const { return *ptr; }
-    T* operator->() const noexcept { return ptr; }
+    T* operator->() const noexcept { return ptr.get(); }
 
     explicit operator bool() const noexcept { return ptr; }
     operator std::shared_ptr<T>() && {
-        if (ptr) {
-            auto deleter = [](T *ptr) {
-                if (ptr) {
-                    ::rcu_read_unlock();
-                }
-            };
-            std::shared_ptr<T> result(ptr, std::move(deleter));
-            ptr = nullptr;
-            return result;
-        } else {
-            return nullptr;
-        }
+        return std::move(ptr);
     }
 
     void swap(snapshot_ptr& other) {
