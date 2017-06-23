@@ -39,8 +39,11 @@ all: $(PROGS)
 #		-DUSE_JEMALLOC
 #	 Verify by using the nm command and searching output for malloc.
 
-test1: dshollman/test1.cpp
-	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
+test1a: test1.cpp
+	$(CXX) $(CXXFLAGS) -DIMP_DSHOLLMAN=1 -I./dshollman -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
+
+test1d: test1.cpp
+	$(CXX) $(CXXFLAGS) -DIMP_AJODWYER=1 -I./ajodwyer -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
 test2: ajodwyer/test2.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "urcu-signal.hpp"
-#include "rcu_obj_base.hpp"
+#include "rcu.hpp"
 
 // Derived-type approach.
 
