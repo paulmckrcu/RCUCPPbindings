@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
-#include "urcu-signal.hpp"
-#include "urcu-rv.hpp"
+#include <urcu.h>
+#include "rcu_domain.hpp"
 
 struct foo {
 	int a;
@@ -16,15 +16,12 @@ void my_func(rcu_head *rhp)
 	std::cout << "Hello World from a callback!\n";
 }
 
-template <typename _T>
-void synchronize_rcu_abstract(_T &p, std::string s)
+void synchronize_rcu_abstract(std::rcu_domain &p, std::string s)
 {
-	std::rcu_flavor_base::cookie_t c;
-
 	std::cout << s << "\n";
 	p.register_thread();
-	c = p.read_lock();
-	p.read_unlock(c);
+	p.read_lock();
+	p.read_unlock();
 	p.quiescent_state();
 	p.synchronize();
 	p.retire(&my_foo.rh, my_func);
@@ -32,8 +29,11 @@ void synchronize_rcu_abstract(_T &p, std::string s)
 	p.unregister_thread();
 }
 
-std::rcu_signal rs;
-std::rcu_rv rv;
+extern std::rcu_domain &rb;
+extern std::rcu_domain &rm;
+extern std::rcu_domain &rq;
+extern std::rcu_domain &rs;
+extern std::rcu_domain &rv;
 
 int main()
 {
@@ -46,6 +46,9 @@ int main()
 	rcu_barrier();
 	rcu_unregister_thread();
 
+	synchronize_rcu_abstract(rb, "Derived class rcu_bp");
+	synchronize_rcu_abstract(rm, "Derived class rcu_mb");
+	synchronize_rcu_abstract(rq, "Derived class rcu_qsbr");
 	synchronize_rcu_abstract(rs, "Derived class rcu_signal");
 	synchronize_rcu_abstract(rv, "Derived class rcu_rv");
 }

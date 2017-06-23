@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     fp->retire();
     rcu_barrier(); // Drain all callbacks on general principles
 
-    // Next with a rcu_flavor_base
+    // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
     fp->retire(rs);

@@ -13,7 +13,7 @@ namespace std { namespace experimental {
 // (Paul's code would go here)
 
 using rcu_head = ::rcu_head;
-using rcu_flavor_base = ::std::rcu_flavor_base;
+using rcu_domain = ::std::rcu_domain;
 
 void call_rcu(
   rcu_head *_Rhp,
@@ -29,15 +29,15 @@ struct __nat {};
 // Type trait for detecting RCUDomain objects
 
 template <typename _T>
-struct is_rcu_flavor {
+struct is_rcu_domain {
   // for now, just use is_base_of...
   static constexpr bool value = ::std::is_base_of<
-    rcu_flavor_base, _T
+    rcu_domain, _T
   >::value;
 };
 
 template <typename _T>
-constexpr bool is_rcu_flavor = is_rcu_flavor<_T>::value;
+constexpr bool is_rcu_domain_v = is_rcu_domain<_T>::value;
 
 
 //==============================================================================
@@ -106,7 +106,7 @@ class rcu_ptr {
       typename _UnaryOperation
     >
     ::std::enable_if_t<
-      is_rcu_flavor<_RCUDomain>
+      is_rcu_domain_v<_RCUDomain>
     >
     retire(
       _RCUDomain&& _Dom,
@@ -125,7 +125,7 @@ class rcu_ptr {
       typename _RCUDomain
     >
     ::std::enable_if_t<
-      is_rcu_flavor<_RCUDomain>
+      is_rcu_domain_v<_RCUDomain>
     >
     retire(
       _RCUDomain&& _Dom

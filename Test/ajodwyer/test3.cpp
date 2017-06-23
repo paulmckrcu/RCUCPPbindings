@@ -34,12 +34,12 @@ int main(int argc, char **argv)
           });
     rcu_barrier();
 
-    std::cout << "Deletion with no rcu_flavor_base\n";
+    std::cout << "Deletion with no rcu_domain\n";
     foo1.a = 44;
     foo1.retire(my_cb);
     rcu_barrier();
 
-    std::cout << "Deletion with rcu_signal rcu_flavor_base\n";
+    std::cout << "Deletion with rcu_signal rcu_domain\n";
     foo1.a = 45;
     foo1.retire(rs, my_cb);
     rs.barrier();

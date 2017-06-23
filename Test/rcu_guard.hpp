@@ -6,7 +6,7 @@ public:
         ::rcu_read_lock();
     }
 
-    explicit rcu_guard(std::rcu_flavor_base *rd)
+    explicit rcu_guard(std::rcu_domain *rd)
     {
         this->rd = rd;
         rd->read_lock();
@@ -24,5 +24,5 @@ public:
     }
 
 private:
-    std::rcu_flavor_base *rd;
+    std::rcu_domain *rd;
 };
