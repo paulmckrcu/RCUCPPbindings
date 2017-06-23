@@ -132,7 +132,7 @@ public:
         futureList.clear();
     }
 
-    void quiescent_state() noexcept { read_lock(); }
+    void quiescent_state() noexcept {}
     void thread_offline() noexcept { read_unlock(); }
     void thread_online() noexcept { read_lock(); }
 

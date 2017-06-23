@@ -14,7 +14,7 @@ public:
     void thread_online() noexcept { rcu_thread_online(); }
 
     static constexpr bool quiescent_state_needed() { return false; }
-    void quiescent_state() noexcept { rcu_quiescent_state(); }
+    void quiescent_state() noexcept {}
 
     void read_lock() noexcept { rcu_read_lock(); }
     void read_unlock() noexcept { rcu_read_unlock(); }
