@@ -1,4 +1,5 @@
 #include "urcu-rv.hpp"
 
-static std::rcu_rv _rv;
-std::rcu_domain &rv = _rv;
+static rcu_domain_rv _rv;
+static std::rcu::rcu_domain_wrapper<decltype(_rv)> _rvw(_rv);
+std::rcu::rcu_domain_base& rv = _rvw;

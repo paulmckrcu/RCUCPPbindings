@@ -1,4 +1,5 @@
 #include "urcu-bp.hpp"
 
-static std::rcu_bp _rb;
-std::rcu_domain &rb = _rb;
+static rcu_domain_bp _rb;
+static std::rcu::rcu_domain_wrapper<decltype(_rb)> _rbw(_rb);
+std::rcu::rcu_domain_base& rb = _rbw;

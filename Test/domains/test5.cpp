@@ -16,7 +16,7 @@ void my_func(rcu_head *rhp)
 	std::cout << "Hello World from a callback!\n";
 }
 
-void synchronize_rcu_abstract(std::rcu_domain &p, std::string s)
+void synchronize_rcu_abstract(std::rcu::rcu_domain_base& p, std::string s)
 {
 	std::cout << s << "\n";
 	p.register_thread();
@@ -29,11 +29,11 @@ void synchronize_rcu_abstract(std::rcu_domain &p, std::string s)
 	p.unregister_thread();
 }
 
-extern std::rcu_domain &rb;
-extern std::rcu_domain &rm;
-extern std::rcu_domain &rq;
-extern std::rcu_domain &rs;
-extern std::rcu_domain &rv;
+extern std::rcu::rcu_domain_base& rb;
+extern std::rcu::rcu_domain_base& rm;
+extern std::rcu::rcu_domain_base& rq;
+extern std::rcu::rcu_domain_base& rs;
+extern std::rcu::rcu_domain_base& rv;
 
 int main()
 {

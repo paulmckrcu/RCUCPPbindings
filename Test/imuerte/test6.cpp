@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 {
     struct bar my_bar;
     struct foo *fp = new struct foo;
-    std::rcu_signal rs;
+    rcu_domain_signal rs;
 
     // First with a normal function.
     fp->a = 42;

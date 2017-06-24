@@ -18,7 +18,7 @@ struct foo foo1;
 
 int main(int argc, char **argv)
 {
-    std::rcu_signal rs;
+    rcu_domain_signal rs;
 
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo, void(*)(foo*)>), sizeof(foo));
 

@@ -1,3 +1,6 @@
+#pragma once
+
+template<class Domain>
 class rcu_guard {
 public:
     rcu_guard() noexcept
@@ -6,9 +9,8 @@ public:
         ::rcu_read_lock();
     }
 
-    explicit rcu_guard(std::rcu_domain *rd)
+    explicit rcu_guard(Domain& d) : rd(&d)
     {
-        this->rd = rd;
         rd->read_lock();
     }
 
@@ -24,5 +26,5 @@ public:
     }
 
 private:
-    std::rcu_domain *rd;
+    Domain *rd;
 };
