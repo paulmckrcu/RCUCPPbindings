@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <type_traits>
-#include "rcu_obj_base.hpp"
+#include "rcu.hpp"
 
 namespace std {
 namespace rcu {
