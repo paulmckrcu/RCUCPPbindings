@@ -14,7 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = test1 test2 test3 test4 test5 test6 test7 test8 test9
+PROGS = test1a test1d test2 test3 test4 test5 test6 test7 test8 test9
 #PROGS = test2 test3 test4 test5 test6 test7 test8 test9
 
 CXXFLAGS = -g -std=c++1z
