@@ -17,19 +17,19 @@ int main(int argc, char **argv)
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo>), sizeof(foo));
 
     {
-    	std::rcu_reader();
+    	std::rcu_reader rdr1();
     }
 
     // First with a normal function.
     fp->a = 42;
     fp->retire();
-    rcu_barrier(); // Drain all callbacks on general principles
+    std::rcu_reader::barrier(); // Drain all callbacks on general principles
 
     // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
     fp->retire();
-    rcu_barrier();
+    std::rcu_reader::barrier();
 
     return 0;
 }

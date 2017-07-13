@@ -76,6 +76,11 @@ namespace std {
 		    rcu_read_unlock();
 	}
 
+	static void barrier() noexcept
+	{
+		rcu_barrier();
+	}
+
     private:
 	bool active;
     };
