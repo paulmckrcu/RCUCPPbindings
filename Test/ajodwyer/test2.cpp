@@ -1,7 +1,8 @@
 #include <iostream>
 #include <unistd.h>
-#include "urcu-signal.hpp"
-#include "rcu.hpp"
+#define RCU_SIGNAL
+#include <urcu.h>
+#include <rcu.hpp>
 
 // Derived-type approach.
 
@@ -12,9 +13,12 @@ struct foo: public std::rcu_obj_base<foo> {
 int main(int argc, char **argv)
 {
     struct foo *fp = new struct foo;
-    rcu_domain_signal rs;
 
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo>), sizeof(foo));
+
+    {
+    	std::rcu_reader();
+    }
 
     // First with a normal function.
     fp->a = 42;
@@ -24,7 +28,7 @@ int main(int argc, char **argv)
     // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
-    fp->retire(rs);
+    fp->retire();
     rcu_barrier();
 
     return 0;

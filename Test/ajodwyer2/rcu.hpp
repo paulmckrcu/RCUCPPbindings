@@ -17,7 +17,7 @@ namespace std {
         {
             deleter = std::move(d);
             ::call_rcu(static_cast<rcu_head *>(this),
-	    	       void [](rcu_head *rhp)
+	    	       [](rcu_head *rhp)
 		       {
 			    auto rhdp = static_cast<rcu_obj_base *>(rhp);
 			    auto obj = static_cast<T *>(rhdp);
@@ -35,7 +35,7 @@ namespace std {
         void retire(D = {})
         {
             ::call_rcu(static_cast<rcu_head *>(this),
-	    	       void [](rcu_head *rhp)
+	    	       [](rcu_head *rhp)
 		       {
 			    auto rhdp = static_cast<rcu_obj_base *>(rhp);
 			    auto obj = static_cast<T *>(rhdp);
@@ -50,13 +50,34 @@ namespace std {
 	rcu_reader() noexcept
 	{
 	    rcu_read_lock();
+	    active = true;
+	}
+	rcu_reader(std::nullptr_t)
+	{
+	    active = false;
 	}
 	rcu_reader(const rcu_reader &) = delete;
+	rcu_reader(rcu_reader &&other) noexcept
+	{
+	    active = other.active;
+	    other.active = false;
+	}
 	rcu_reader&operator=(const rcu_reader &) = delete;
+	rcu_reader&operator=(rcu_reader &&other)
+	{
+	    if (this != &other) {
+		other.active = false;
+		active = true;
+	    }
+	}
 	~rcu_reader() noexcept
 	{
-	    rcu_read_unlock();
+	    if (active)
+		    rcu_read_unlock();
 	}
-    }
+
+    private:
+	bool active;
+    };
 
 } // namespace std

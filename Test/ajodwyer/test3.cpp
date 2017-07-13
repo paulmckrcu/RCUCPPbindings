@@ -18,7 +18,6 @@ struct foo foo1;
 
 int main(int argc, char **argv)
 {
-    rcu_domain_signal rs;
 
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo, void(*)(foo*)>), sizeof(foo));
 
@@ -41,8 +40,8 @@ int main(int argc, char **argv)
 
     std::cout << "Deletion with rcu_signal rcu_domain\n";
     foo1.a = 45;
-    foo1.retire(rs, my_cb);
-    rs.barrier();
+    foo1.retire(my_cb);
+    rcu_barrier();
 
     return 0;
 }
