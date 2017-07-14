@@ -14,7 +14,7 @@
 #
 # Copyright (c) 2016 Paul E. McKenney, IBM Corporation.
 
-PROGS = test1a test1d test2 test3 test4 test5 test6 test7 test8 test9
+PROGS = test1a test1d test2 test3 test2a test3a test4 test5 test6 test7 test8 test9
 #PROGS = test2 test3 test4 test5 test6 test7 test8 test9
 
 CXXFLAGS = -g -std=c++1z
@@ -46,9 +46,15 @@ test1d: test1.cpp
 	$(CXX) $(CXXFLAGS) -DIMP_AJODWYER=1 -I./ajodwyer -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
 test2: ajodwyer/test2.cpp
-	$(CXX) $(CXXFLAGS) -I./domains -I./ajodwyer2 -o $@ $^ -pthread -lurcu -lurcu-signal
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
 test3: ajodwyer/test3.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
+
+test3a: ajodwyer2/test3a.cpp
+	$(CXX) $(CXXFLAGS) -I./domains -I./ajodwyer2 -o $@ $^ -pthread -lurcu -lurcu-signal
+
+test2a: ajodwyer2/test2a.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -I./ajodwyer2 -o $@ $^ -pthread -lurcu -lurcu-signal
 
 test4: test4.cpp
