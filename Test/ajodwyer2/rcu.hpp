@@ -62,12 +62,12 @@ namespace std {
 	    active = other.active;
 	    other.active = false;
 	}
-	rcu_reader&operator=(const rcu_reader &) = delete;
-	rcu_reader&operator=(rcu_reader &&other)
+	rcu_reader& operator=(const rcu_reader&) = delete;
+	rcu_reader& operator=(rcu_reader&& other)
 	{
 	    if (this != &other) {
-		other.active = false;
-		active = true;
+		this->~rcu_reader();
+		new (this) rcu_reader(std::move(other));
 	    }
 	}
 	~rcu_reader() noexcept
