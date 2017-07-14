@@ -52,7 +52,7 @@ namespace std {
 	    rcu_read_lock();
 	    active = true;
 	}
-	rcu_reader(std::nullptr_t)
+	rcu_reader(std::nullptr_t) noexcept
 	{
 	    active = false;
 	}
