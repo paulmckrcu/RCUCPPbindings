@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     printf("%zu %zu %zu\n", sizeof(rcu_head), sizeof(std::rcu_obj_base<foo>), sizeof(foo));
 
     fp->a = 42;
+    rcu_register_thread();
 
     {
 	std::rcu_reader rdr1;
@@ -55,6 +56,8 @@ int main(int argc, char **argv)
     fp->a = 43;
     fp->retire();
     std::rcu_reader::barrier();
+
+    rcu_unregister_thread();
 
     return 0;
 }
