@@ -59,6 +59,7 @@ namespace std {
 	rcu_reader(const rcu_reader &) = delete;
 	rcu_reader(rcu_reader &&other) noexcept
 	{
+	    this->~rcu_reader();
 	    active = other.active;
 	    other.active = false;
 	}
@@ -73,12 +74,12 @@ namespace std {
 	~rcu_reader() noexcept
 	{
 	    if (active)
-		    rcu_read_unlock();
+		rcu_read_unlock();
 	}
 
 	static void barrier() noexcept
 	{
-		rcu_barrier();
+	    rcu_barrier();
 	}
 
     private:
