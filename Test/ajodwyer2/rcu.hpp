@@ -63,7 +63,7 @@ namespace std {
 	    other.active = false;
 	}
 	rcu_reader& operator=(const rcu_reader&) = delete;
-	rcu_reader& operator=(rcu_reader&& other)
+	rcu_reader& operator=(rcu_reader&& other) noexcept
 	{
 	    if (this != &other) {
 		this->~rcu_reader();
