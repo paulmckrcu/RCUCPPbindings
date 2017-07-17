@@ -77,13 +77,23 @@ namespace std {
 		rcu_read_unlock();
 	}
 
+    private:
+	bool active;
+    };
+
+    // Methods for RCU updaters
+    class rcu_updater {
+    public:
+
+	static void synchronize() noexcept
+	{
+	    synchronize_rcu();
+	}
+
 	static void barrier() noexcept
 	{
 	    rcu_barrier();
 	}
-
-    private:
-	bool active;
     };
 
 } // namespace std
