@@ -21,7 +21,7 @@ std::rcu_reader start_rcu_read()
 
 void end_rcu_read(std::rcu_reader&& rdr)
 {
-	std::rcu_reader rdr5(nullptr);
+	std::rcu_reader rdr5(std::defer_lock);
 
 	std::cout << "In end_rcu_read()\n";
 	rdr5 = std::move(rdr);
@@ -38,8 +38,8 @@ int main(int argc, char **argv)
 
     {
 	std::rcu_reader rdr1;
-	std::rcu_reader rdr2(nullptr);
-	std::rcu_reader rdr4(nullptr);
+	std::rcu_reader rdr2(std::defer_lock);
+	std::rcu_reader rdr4(std::defer_lock);
 
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
 	rdr2 = std::move(rdr1);

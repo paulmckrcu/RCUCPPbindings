@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <utility>
+#include <mutex>
 
 // Derived-type approach.  All RCU-protected data structures using this
 // approach must derive from std::rcu_obj_base, which in turn derives
@@ -52,7 +53,7 @@ namespace std {
 	    rcu_read_lock();
 	    active = true;
 	}
-	rcu_reader(std::nullptr_t) noexcept
+	rcu_reader(std::defer_lock_t) noexcept
 	{
 	    active = false;
 	}
