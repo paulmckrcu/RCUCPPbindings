@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 // Derived-type approach.  All RCU-protected data structures using this
@@ -16,13 +17,14 @@ namespace std {
         void retire(D d = {})
         {
             deleter = std::move(d);
-            ::call_rcu(static_cast<rcu_head *>(this),
-	    	       [](rcu_head *rhp)
-		       {
-			    auto rhdp = static_cast<rcu_obj_base *>(rhp);
-			    auto obj = static_cast<T *>(rhdp);
-			    rhdp->deleter(obj);
-		       });
+            ::call_rcu(
+                static_cast<rcu_head *>(this),
+                [](rcu_head *rhp) {
+                    auto rhdp = static_cast<rcu_obj_base *>(rhp);
+                    auto obj = static_cast<T *>(rhdp);
+                    rhdp->deleter(obj);
+                }
+            );
         }
     };
 
@@ -34,56 +36,82 @@ namespace std {
     public:
         void retire(D = {})
         {
-            ::call_rcu(static_cast<rcu_head *>(this),
-	    	       [](rcu_head *rhp)
-		       {
-			    auto rhdp = static_cast<rcu_obj_base *>(rhp);
-			    auto obj = static_cast<T *>(rhdp);
-			    D()(obj);
-		       });
+            ::call_rcu(
+                static_cast<rcu_head *>(this),
+                [](rcu_head *rhp) {
+                    auto rhdp = static_cast<rcu_obj_base *>(rhp);
+                    auto obj = static_cast<T *>(rhdp);
+                    D()(obj);
+                }
+            );
         }
     };
 
     // RAII for RCU readers
     class rcu_reader {
     public:
-	rcu_reader() noexcept
-	{
-	    rcu_read_lock();
-	    active = true;
-	}
-	rcu_reader(std::nullptr_t) noexcept
-	{
-	    active = false;
-	}
-	rcu_reader(const rcu_reader &) = delete;
-	rcu_reader(rcu_reader &&other) noexcept
-	{
-	    this->~rcu_reader();
-	    active = other.active;
-	    other.active = false;
-	}
-	rcu_reader& operator=(const rcu_reader&) = delete;
-	rcu_reader& operator=(rcu_reader&& other) noexcept
-	{
-	    if (this != &other) {
-		this->~rcu_reader();
-		new (this) rcu_reader(std::move(other));
-	    }
-	}
-	~rcu_reader() noexcept
-	{
-	    if (active)
-		rcu_read_unlock();
-	}
+        rcu_reader() noexcept
+        {
+            rcu_read_lock();
+            active = true;
+        }
+        rcu_reader(std::defer_lock_t) noexcept
+        {
+            active = false;
+        }
+        rcu_reader(const rcu_reader &) = delete;
+        rcu_reader(rcu_reader&& other) noexcept
+        {
+            active = other.active;
+            other.active = false;
+        }
+        rcu_reader& operator=(const rcu_reader&) = delete;
+        rcu_reader& operator=(rcu_reader&& other) noexcept
+        {
+            if (active) {
+                rcu_read_unlock();
+            }
+            active = other.active;
+            other.active = false;
+            return *this;
+        }
 
-	static void barrier() noexcept
-	{
-	    rcu_barrier();
-	}
+        ~rcu_reader() noexcept
+        {
+            if (active) {
+                rcu_read_unlock();
+            }
+        }
+
+        void swap(rcu_reader& other) noexcept
+        {
+            std::swap(active, other.active);
+        }
+
+        void lock() noexcept
+        {
+            rcu_read_lock();
+            active = true;
+        }
+
+        void unlock() noexcept
+        {
+            rcu_read_unlock();
+            active = false;
+        }
+
+        static void barrier() noexcept
+        {
+            rcu_barrier();
+        }
 
     private:
-	bool active;
+        bool active;
     };
+
+    void swap(rcu_reader& a, rcu_reader& b) noexcept
+    {
+        a.swap(b);
+    }
 
 } // namespace std
