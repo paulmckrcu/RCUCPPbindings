@@ -4,7 +4,8 @@
 #include <urcu.h>
 #include <rcu.hpp>
 
-// Derived-type approach.
+// Derived-type approach, and derived from ajodwyer/test2.cpp.
+// All bugs property of subsequent submitter.
 
 struct foo: public std::rcu_obj_base<foo> {
     int a;

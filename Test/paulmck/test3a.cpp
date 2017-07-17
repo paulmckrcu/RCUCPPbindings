@@ -3,7 +3,8 @@
 #include "urcu-signal.hpp"
 #include "rcu.hpp"
 
-// Derived-type approach.
+// Derived-type approach, and derived from ajodwyer/test3.cpp.
+// All bugs property of subsequent submitter.
 
 struct foo: public std::rcu_obj_base<foo, void(*)(foo*)> {
     int a;
