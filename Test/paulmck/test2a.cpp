@@ -30,6 +30,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
 	rdr2 = std::move(rdr1);
+	std::cout << "Calling start_rcu_read()\n";
 	rdr4 = std::move(start_rcu_read());
 	end_rcu_read(std::forward<std::rcu_reader>(rdr4));
 	std::cout << "Back from end_rcu_read()\n";

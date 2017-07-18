@@ -9,6 +9,13 @@
 // approach must derive from std::rcu_obj_base, which in turn derives
 // from std::rcu_head.  No idea what happens in case of multiple inheritance.
 
+// Debugging macros
+#if 1
+#define DPRINT(s, ...) printf(s, ##__VA_ARGS__)
+#else
+#define DPRINT(s, ...)
+#endif
+
 namespace std {
     template<typename T, typename D = default_delete<T>, bool E = is_empty<D>::value>
     class rcu_obj_base: private rcu_head {
@@ -52,10 +59,12 @@ namespace std {
 	{
 	    rcu_read_lock();
 	    active = true;
+	    DPRINT("rcu_reader() -> rcu_read_lock()\n");
 	}
 	rcu_reader(std::defer_lock_t) noexcept
 	{
 	    active = false;
+	    DPRINT("rcu_reader() ->\n");
 	}
 	rcu_reader(const rcu_reader &) = delete;
 	rcu_reader(rcu_reader &&other) noexcept
@@ -74,8 +83,12 @@ namespace std {
 	}
 	~rcu_reader() noexcept
 	{
-	    if (active)
+	    if (active) {
+	        DPRINT("~rcu_reader() -> rcu_read_unlock()\n");
 		rcu_read_unlock();
+	    } else {
+	        DPRINT("~rcu_reader() ->\n");
+	    }
 	}
 
     private:
