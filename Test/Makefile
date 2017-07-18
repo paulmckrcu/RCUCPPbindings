@@ -52,11 +52,11 @@ test2: ajodwyer/test2.cpp
 test3: ajodwyer/test3.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
 
-test3a: paulmck/test3a.cpp
-	$(CXX) $(CXXFLAGS) -I./domains -I./paulmck -o $@ $^ -pthread -lurcu -lurcu-signal
+test2a: paulmck/test2a.cpp paulmck/rcu.hpp
+	$(CXX) $(CXXFLAGS) -I./domains -I./paulmck -o $@ paulmck/test2a.cpp -pthread -lurcu -lurcu-signal
 
-test2a: paulmck/test2a.cpp
-	$(CXX) $(CXXFLAGS) -I./domains -I./paulmck -o $@ $^ -pthread -lurcu -lurcu-signal
+test3a: paulmck/test3a.cpp paulmck/rcu.hpp
+	$(CXX) $(CXXFLAGS) -I./domains -I./paulmck -o $@ paulmck/test3a.cpp -pthread -lurcu -lurcu-signal
 
 test4: test4.cpp
 	$(CXX) $(CXXFLAGS) -I./domains -o $@ $^ -pthread -lurcu -lurcu-signal
