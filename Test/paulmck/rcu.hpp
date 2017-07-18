@@ -64,7 +64,7 @@ namespace std {
 	rcu_reader(std::defer_lock_t) noexcept
 	{
 	    active = false;
-	    DPRINT("rcu_reader() ->\n");
+	    DPRINT("rcu_reader(std::defer_lock_t) ->\n");
 	}
 	rcu_reader(const rcu_reader &) = delete;
 	rcu_reader(rcu_reader &&other) noexcept
@@ -72,6 +72,7 @@ namespace std {
 	    this->~rcu_reader();
 	    active = other.active;
 	    other.active = false;
+	    DPRINT("rcu_reader(&&) ->\n");
 	}
 	rcu_reader& operator=(const rcu_reader&) = delete;
 	rcu_reader& operator=(rcu_reader&& other) noexcept
@@ -79,6 +80,7 @@ namespace std {
 	    if (this != &other) {
 		this->~rcu_reader();
 		new (this) rcu_reader(std::move(other));
+	        DPRINT("rcu_reader=(&&) ->\n");
 	    }
 	}
 	~rcu_reader() noexcept
@@ -95,6 +97,31 @@ namespace std {
 	bool active;
     };
 
+    namespace detail {
+	template<typename T, typename D = default_delete<T>>
+	class rcu_updater_ob: public rcu_head {
+	public:
+
+	    static void trampoline(rcu_head *rhp)
+	    {
+		auto ruobp = static_cast<rcu_updater_ob<T> *>(rhp);
+		ruobp->deleter(ruobp->non_intruded);
+		delete ruobp;
+	    }
+
+            void retire(T* ni, D d)
+            {
+		non_intruded = ni;
+		deleter = std::move(d);
+		::call_rcu(static_cast<rcu_head *>(this), trampoline);
+            }
+
+	    T* non_intruded;
+	    D deleter;
+
+	};
+    } // namespace detail
+
     // Methods for RCU updaters
     class rcu_updater {
     public:
@@ -102,6 +129,14 @@ namespace std {
 	static void synchronize() noexcept
 	{
 	    synchronize_rcu();
+	}
+
+	template<typename T, typename D = default_delete<T>>
+	static void retire(T* p, D d)
+	{
+	    auto ruobp = new detail::rcu_updater_ob<T, D>;
+
+	    ruobp->retire(p, d);
 	}
 
 	static void barrier() noexcept

@@ -44,5 +44,10 @@ int main(int argc, char **argv)
     foo1.retire(my_cb);
     std::rcu_updater::barrier(); // Drain all callbacks before reusing
 
+    std::cout << "Deletion with static retire()\n";
+    foo1.a = 46;
+    std::rcu_updater::retire(&foo1, my_cb);
+    std::rcu_updater::barrier(); // Drain all callbacks before reusing
+
     return 0;
 }
