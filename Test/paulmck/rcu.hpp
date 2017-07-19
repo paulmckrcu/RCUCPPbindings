@@ -100,11 +100,6 @@ namespace std {
             active = false;
         }
 
-        static void barrier() noexcept
-        {
-            rcu_barrier();
-        }
-
     private:
         bool active;
     };
@@ -113,5 +108,19 @@ namespace std {
     {
         a.swap(b);
     }
+
+    // Methods for RCU updaters
+    class rcu_updater {
+    public:
+    	static void synchronize() noexcept
+	{
+	    synchronize_rcu();
+	}
+
+        static void barrier() noexcept
+        {
+            rcu_barrier();
+        }
+    };
 
 } // namespace std

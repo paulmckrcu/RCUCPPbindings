@@ -45,13 +45,13 @@ int main(int argc, char **argv)
 
     // First with a normal function.
     fp->retire();
-    std::rcu_reader::barrier(); // Drain all callbacks on general principles
+    std::rcu_updater::barrier(); // Drain all callbacks on general principles
 
     // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
     fp->retire();
-    std::rcu_reader::barrier();
+    std::rcu_updater::barrier();
 
     rcu_unregister_thread();
 
