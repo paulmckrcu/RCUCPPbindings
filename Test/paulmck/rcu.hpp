@@ -137,7 +137,7 @@ namespace std {
     }
 
     template<typename T, typename D = default_delete<T>>
-    void retire(T *p, D d = {})
+    void rcu_retire(T *p, D d = {})
     {
 	auto robnp = new details::rcu_obj_base_ni<T, D>(p, d);
 

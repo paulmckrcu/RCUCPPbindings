@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     // Next with bare retire().
     fp = new struct foo;
     fp->a = 44;
-    std::retire(fp, my_cb);
+    std::rcu_retire(fp, my_cb);
     std::rcu_updater::barrier();
 
     rcu_unregister_thread();
