@@ -127,6 +127,10 @@ namespace std {
 	template<typename T, typename D = default_delete<T>>
 	class rcu_obj_base_ni: public rcu_head {
 	public:
+	    rcu_obj_base_ni(T *pi, D di = {}) {
+		p = pi;
+		d = di;
+	    }
 	    T *p;
 	    D d;
 	};
@@ -135,10 +139,7 @@ namespace std {
     template<typename T, typename D = default_delete<T>>
     void retire(T *p, D d = {})
     {
-	auto robnp = new details::rcu_obj_base_ni<T, D>;
-
-	robnp->p = p;
-	robnp->d = d;
+	auto robnp = new details::rcu_obj_base_ni<T, D>(p, d);
 
 	::call_rcu(
 	    static_cast<rcu_head *>(robnp),
