@@ -123,4 +123,31 @@ namespace std {
         }
     };
 
+    namespace details {
+	template<typename T, typename D = default_delete<T>>
+	class rcu_obj_base_ni: public rcu_head {
+	public:
+	    T *p;
+	    D d;
+	};
+    }
+
+    template<typename T, typename D = default_delete<T>>
+    void retire(T *p, D d = {})
+    {
+	auto robnp = new details::rcu_obj_base_ni<T, D>;
+
+	robnp->p = p;
+	robnp->d = d;
+
+	::call_rcu(
+	    static_cast<rcu_head *>(robnp),
+	    [](rcu_head *rhp) {
+		auto robnp2 = static_cast<details::rcu_obj_base_ni<T, D> *>(rhp);
+
+		robnp2->d(robnp2->p);
+		delete robnp2;
+	    });
+    }
+
 } // namespace std

@@ -22,6 +22,12 @@ void end_rcu_read(std::rcu_reader rdr)
 	std::cout << "In end_rcu_read()\n";
 }
 
+void my_cb(foo *fp)
+{
+	std::cout << "In my_cb()\n";
+	delete(fp);
+}
+
 int main(int argc, char **argv)
 {
     struct foo *fp = new struct foo;
@@ -51,6 +57,12 @@ int main(int argc, char **argv)
     fp = new struct foo;
     fp->a = 43;
     fp->retire();
+    std::rcu_updater::barrier();
+
+    // Next with bare retire().
+    fp = new struct foo;
+    fp->a = 44;
+    std::retire(fp, my_cb);
     std::rcu_updater::barrier();
 
     rcu_unregister_thread();
