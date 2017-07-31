@@ -115,8 +115,9 @@ and
 WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 
 Specifically, this document proposes
-\co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}) and
-\co{rcu_obj_base} (Figure~\ref{fig:RCU Callbacks: Intrusive Approach}).
+\co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}),
+\co{rcu_obj_base} (Figure~\ref{fig:Retiring RCU-Protected Objects}), and
+\co{rcu_updater} (Figure~\ref{sec:RCU Updaters}).
 
 Section~\ref{sec:Existing C-Language RCU API} presents the base (C-style) RCU API,
 Section~\ref{sec:RAII RCU Readers} presents a proposal for scoped RCU readers,
@@ -248,11 +249,14 @@ Figure~\ref{fig:Existing C-Language RCU API}.
 
 Both \co{rcu_read_lock()} and \co{rcu_read_unlock()} are encapsulated
 in a C++ RAII class named \co{rcu_reader}.
-The \co{synchronize_rcu()} function may be emulated using \co{call_rcu()},
-and is therefore omitted from this initial proposal.  If needed, it
-will be added later.
-The \co{rcu_barrier()} function is exposed via the
-\co{std::rcu_reader::barrier()} static member function.
+The \co{synchronize_rcu()} function is exposed via the
+\co{std::rcu_updater::synchronize()} static member function, and
+the \co{rcu_barrier()} function is exposed via the
+\co{std::rcu_updater::barrier()} static member function.
+The \co{call_rcu()} function is exposed via the
+\co{std::rcu_obj_base<T,D>retire()} member function,
+and a non-intrusive variant of \co{call_rcu()} is exposed via the
+\co{std::rcu_retire()} templated free function.
 
 We expect that \co{rcu_register_thread()} and \co{rcu_unregister_thread()}
 will be buried into the thread-creation and thread-exit portions of the
@@ -274,14 +278,16 @@ to the C++ API as well as to the userspace RCU library.
  1   class rcu_reader {
  2   public:
  3     rcu_reader() noexcept;
- 4     rcu_reader(std::nullptr_t) noexcept;
+ 4     rcu_reader(std::defer_lock_t) noexcept;
  5     rcu_reader(const rcu_reader &) = delete;
  6     rcu_reader(rcu_reader &&other) noexcept;
  7     rcu_reader& operator=(const rcu_reader&) = delete;
  8     rcu_reader& operator=(rcu_reader&& other) noexcept;
  9     ~rcu_reader() noexcept;
-10     static void barrier() noexcept
-11   };
+10     void swap(rcu_reader& other) noexcept;
+11     void lock() noexcept;
+12     void unlock() noexcept;
+13   };
 \end{verbatim}
 }
 \caption{RAII RCU Readers}
@@ -303,11 +309,6 @@ an RCU read-side critical section's scope to be arbitrarily
 extended across function boundaries via \co{std::forward} and
 \co{std::move}.
 
-The static member function \co{barrier()} maps to the C-language
-free function \co{rcu_barrier()}, which waits for all previously
-retired object to be reclaimed.
-{\bf Question:}~ Should this instead be a free function?
-
 \section{Retiring RCU-Protected Objects}
 \label{sec:Retiring RCU-Protected Objects}
 
@@ -324,21 +325,24 @@ and~\ref{sec:Address Arithmetic}.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1 template<typename T, typename D = default_delete<T>, bool E = is_empty<D>::value>
- 2 class rcu_obj_base: private rcu_head {
+ 1 template<typename T, typename D = default_delete<T>>
+ 2 class rcu_obj_base {
  3 public:
  4         void retire(D d = {});
  5 };
+ 6
+ 7 template<typename T, typename D = default_delete<T>>
+ 8 void rcu_retire(T *p, D d = {});
 \end{verbatim}
 }
-\caption{RCU Callbacks: Intrusive Approach (Preferred)}
-\label{fig:RCU Callbacks: Intrusive Approach}
+\caption{Retiring RCU-Protected Objects}
+\label{fig:Retiring RCU-Protected Objects}
 \end{figure}
 
 The \co{rcu_obj_base} class provides a \co{retire()} method that
-takes a deleter,,
+takes a deleter,
 as shown in
-Figure~\ref{fig:RCU Callbacks: Intrusive Approach}.
+Figure~\ref{fig:Retiring RCU-Protected Objects}.
 The deleter's operator() is invoked after a grace period.
 The deleter type defaults to \co{std::default_delete<T>},
 but one could also use a
@@ -347,13 +351,41 @@ before freeing the object, or a raw function pointer type such as
 \co{void(*)(T*)}, or a lambda type.
 We recommend avoiding deleter types such as \co{std::function<void(T*)>}
 (and also any other type requiring memory allocation) because
-allocating memory on the free path can result in out-of-memory deadlocks.
+allocating memory on the free path can result in out-of-memory deadlocks,
+but we nevertheless recognize that C++ applications that assume ample
+memory might use such deleters for convenience.
 
 The \co{call_rcu()} C-language free function is used to implement
 \co{retire()}.
 
 Please note that this is the preferred approach, and is being proposed
 for standardization.
+
+\section{RCU Updaters}
+\label{sec:RCU Updaters}
+
+\begin{figure}[tbp]
+{ \scriptsize
+\begin{verbatim}
+ 1 class rcu_updater {
+ 2   static void synchronize() noexcept;
+ 3   static void barrier() noexcept;
+ 4 };
+\end{verbatim}
+}
+\caption{RCU Updaters}
+\label{fig:RCU Updaters}
+\end{figure}
+
+RCU updaters can use the \co{rcu_updater} class shown in
+Figure~\ref{fig:RCU Updaters}.
+This class contains a \co{synchronize()} static member function,
+which maps to the C-language \co{synchronize_rcu()} function, which
+waits for all pre-existing RCU readers to complete.
+It also contains the \co{barrier()} static member function,
+which maps to the C-language \co{rcu_barrier()} member function,
+which waits for all pending \co{retire()} and \co{rcu_retire()}
+deleters to be invoked.
 
 \section{Hazard Pointers and RCU: Which to Use?}
 \label{sec:Hazard Pointers and RCU: Which to Use?}
@@ -465,9 +497,11 @@ proposal is as follows:
 
 \begin{enumerate}
 \item	The \co{hazptr_obj_base} class is analogous to \co{rcu_obj_base}.
-\item	The \co{hazptr_domain} class is analogous to \co{rcu_domain}.
+\item	There is no RCU counterpart to \co{hazptr_domain}, in part because
+	RCU does not explicitly track read-side references to specific
+	objects.
 \item	The private \co{hazptr_obj} class is analogous to the pre-existing
-	\co{rcu_head} struct.
+	\co{rcu_head} struct used in many RCU implementations.
 	Because this is a private hazard-pointers class, there is no
 	need to have compatible names.
 \item	There is no RCU class analogous to \co{hazptr_rec} because
@@ -477,6 +511,9 @@ proposal is as follows:
 	class.
 	This is because hazard pointers does not have (or need)
 	a counterpart to \co{rcu_read_lock()} and \co{rcu_read_unlock()}.
+\item	There is no hazard pointers counterpart to the \co{rcu_retire()}
+	templated free function because no hazard-pointers user has
+	expressed a need for it.
 \end{enumerate}
 
 \section{Summary}
@@ -486,8 +523,9 @@ This paper demonstrates a way of creating C++ bindings for a C-language
 RCU implementation, which has been tested against the userspace RCU
 library.
 Specifically, this document proposes
-\co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}) and
-\co{rcu_obj_base} (Figure~\ref{fig:RCU Callbacks: Intrusive Approach}).
+\co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}),
+\co{rcu_obj_base} (Figure~\ref{fig:Retiring RCU-Protected Objects}), and
+\co{rcu_updater} (Figure~\ref{sec:RCU Updaters}).
 We believe that these bindings are also appropriate for the type-oblivious
 C++ RCU implementations that information-hiding considerations are likely
 to favor.
