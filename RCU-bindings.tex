@@ -400,6 +400,12 @@ scalability~\cite{MathieuDesnoyers2012URCU}.
 Users wishing the best performance and scalability will therefore tend
 to prefer \co{std::rcu_retire()} over \co{std::rcu_obj_base::retire()}.
 
+Finally, \co{std::rcu_retire()} is non-intrusive.
+This means that (for example) an object of type \co{std::string} can be
+passed to \co{std::rcu_retire()}.
+In contrast, \co{std::rcu_obj_base::retire()} can only be passed types
+related to \co{std::rcu_obj_base}.
+
 \section{RCU Updaters}
 \label{sec:RCU Updaters}
 
