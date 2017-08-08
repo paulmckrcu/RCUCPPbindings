@@ -396,7 +396,9 @@ User experience has shown that high-quality implementations
 of \co{std::rcu_retire()} can achieve better cache locality than can 
 high-quality implementations of \co{std::rcu_obj_base::retire()},
 which results in better performance and
-scalability~\cite{MathieuDesnoyers2012URCU}.
+scalability.\footnote{
+	Note that this user experience is not limited to
+	Google~\cite{MathieuDesnoyers2012URCU}.}
 Users wishing the best performance and scalability will therefore tend
 to prefer \co{std::rcu_retire()} over \co{std::rcu_obj_base::retire()}.
 
