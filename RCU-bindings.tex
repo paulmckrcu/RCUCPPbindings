@@ -36,11 +36,11 @@
 {\bf Date: } 2017-07-13 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, Arthur O'Dwyer, David Hollman, \\
-and Andrew Hunter \\
+Andrew Hunter, and Geoffrey Romer \\
 {\bf Email: } paulmck@linux.vnet.ibm.com, maged.michael@gmail.com, \\
 fraggamuffin@gmail.com, isabella.muerte@mnmlstc.com, \\
 arthur.j.odwyer@gmail.com, dshollm@sandia.gov, \\
-and ahh@google.com
+ahh@google.com, and gromer@google.com
 } % end author
 
 % Use the following at camera-ready time to suppress page numbers.
@@ -256,7 +256,7 @@ The \co{synchronize_rcu()} function is exposed via the
 the \co{rcu_barrier()} function is exposed via the
 \co{std::rcu_updater::barrier()} static member function.
 The \co{call_rcu()} function is exposed via the
-\co{std::rcu_obj_base<T,D>retire()} member function,
+\co{std::rcu_obj_base<T,D>::retire()} member function,
 and a non-intrusive variant of \co{call_rcu()} is exposed via the
 \co{std::rcu_retire()} templated free function.
 
@@ -298,18 +298,34 @@ to the C++ API as well as to the userspace RCU library.
 
 The \co{rcu_reader} class shown in
 Figure~\ref{fig:RAII RCU Readers}
-may be used for this purpose.
-An argumentless constructor uses the API, or an \co{rcu_domain} class
-may be passed to the constructor to use the specified RCU
-implementation.
+may be used for RAII RCU read-side critical sections.
+An argumentless constructor enters an RCU read-side critical section,
+a constructor with an argument of type \co{defer_lock_t} defers
+entering a critical section until a later call to a
+\co{std::rcu_reader::lock()} member function,
+and a constructor taking another \co{rcu_reader} instance
+transfers the RCU read-side critical section from that instance
+to the newly constructed instance.
+The assignment operator may be used to transfer an RCU read-side critical
+section from another \co{rcu_reader} instance to an already-constructed
+instance.
 
-This is intended to be used in a manner similar to
-\co{std::lock_guard}.
+This class is intended to be used in a manner similar to \co{std::lock_guard},
+so the destructor exits the RCU read-side critical section.
 
 This implementation is movable but not copyable, which enables
 an RCU read-side critical section's scope to be arbitrarily
 extended across function boundaries via \co{std::forward} and
 \co{std::move}.
+The \co{std::rcu_reader::swap()} member function swaps the roles
+of a pair of \co{rcu_reader} instances in the expected manner.
+Finally, the \co{std::rcu_reader::lock()} member function enters an
+RCU read-side critical section and the \co{std::rcu_reader::unlock()}
+member function exits its critical section.
+Invoking \co{std::rcu_reader::lock()} on an instance already corresponding
+to an RCU read-side critical section and invoking
+\co{std::rcu_reader::unlock()} on an instance not corresponding to
+an RCU read-side critical section results in undefined behavior.
 
 \section{Retiring RCU-Protected Objects}
 \label{sec:Retiring RCU-Protected Objects}
@@ -345,23 +361,34 @@ The \co{rcu_obj_base} class provides a \co{retire()} method that
 takes a deleter,
 as shown in
 Figure~\ref{fig:Retiring RCU-Protected Objects}.
-The deleter's operator() is invoked after a grace period.
+This class contains any storage required by that deleter, so that
+the caller of
+\co{std::rcu_obj_base<T,D>::retire()} never needs to allocate
+memory on the retire/free path.
+The deleter's \co{operator()} is invoked after a grace period.
 The deleter type defaults to \co{std::default_delete<T>},
 but one could also use a
 custom functor class with an \co{operator()} that carries out teardown actions
 before freeing the object, or a raw function pointer type such as
-\co{void(*)(T*)}, or a lambda type.
+\co{void(*)(T*)}.
+Given sufficient type erasure and reconsitution, the \co{call_rcu()}
+C-language free function from the userspace RCU library can be used to
+implement \co{retire()}.
+
 We recommend avoiding deleter types such as \co{std::function<void(T*)>}
 (and also any other type requiring memory allocation) because
 allocating memory on the free path can result in out-of-memory deadlocks,
 but we nevertheless recognize that C++ applications that assume ample
 memory might use such deleters for convenience.
-
-The \co{call_rcu()} C-language free function is used to implement
-\co{retire()}.
-
-Please note that this is the preferred approach, and is being proposed
-for standardization.
+However, such users are better served by the \co{std::rcu_retire()}
+templated free function shown on lines~7-8 of
+Figure~\ref{fig:Retiring RCU-Protected Objects}.
+Although this function can allocate of the retire/free path, high-quality
+implementations will take steps to ensure that such allocation is very
+rare, for example, by pre-allocating sufficient storage to avoid
+such allocation in the common case.
+Simple implementations can instead provide a trivial \co{std::rcu_retire()}
+function that is a thin wrapper around \co{std::rcu_obj_base::retire()}.
 
 \section{RCU Updaters}
 \label{sec:RCU Updaters}
