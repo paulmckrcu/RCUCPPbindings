@@ -51,19 +51,21 @@ int main(int argc, char **argv)
 
     // First with a normal function.
     fp->retire();
-    std::rcu_updater::barrier(); // Drain all callbacks on general principles
+    std::rcu_barrier(); // Drain all callbacks on general principles
 
     // Next with a rcu_domain
     fp = new struct foo;
     fp->a = 43;
     fp->retire();
-    std::rcu_updater::barrier();
+    std::rcu_barrier();
 
     // Next with bare retire().
     fp = new struct foo;
     fp->a = 44;
     std::rcu_retire(fp, my_cb);
-    std::rcu_updater::barrier();
+    std::rcu_barrier();
+
+    std::synchronize_rcu();
 
     rcu_unregister_thread();
 

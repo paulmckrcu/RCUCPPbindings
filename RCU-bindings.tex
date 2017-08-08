@@ -119,7 +119,9 @@ WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
 Specifically, this document proposes
 \co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}),
 \co{rcu_obj_base} (Figure~\ref{fig:Retiring RCU-Protected Objects}), and
-\co{rcu_updater} (Figure~\ref{sec:RCU Updaters}).
+several free functions
+(Figures~\ref{fig:Retiring RCU-Protected Objects}
+and~\ref{fig:RCU Updaters}).
 
 Section~\ref{sec:Existing C-Language RCU API} presents the base (C-style) RCU API,
 Section~\ref{sec:RAII RCU Readers} presents a proposal for scoped RCU readers,
@@ -387,7 +389,7 @@ Although this function can allocate of the retire/free path, high-quality
 implementations will take steps to ensure that such allocation is very
 rare, for example, by pre-allocating sufficient storage to avoid
 such allocation in the common case.
-Simple implementations can instead provide a trivial \co{std::rcu_retire()}
+Simple implementations can provide a trivial \co{std::rcu_retire()}
 function that is a thin wrapper around \co{std::rcu_obj_base::retire()}.
 
 \section{RCU Updaters}
@@ -396,23 +398,21 @@ function that is a thin wrapper around \co{std::rcu_obj_base::retire()}.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1 class rcu_updater {
- 2   static void synchronize() noexcept;
- 3   static void barrier() noexcept;
- 4 };
+ 1 static void synchronize_rcu() noexcept;
+ 2 static void rcu_barrier() noexcept;
 \end{verbatim}
 }
 \caption{RCU Updaters}
 \label{fig:RCU Updaters}
 \end{figure}
 
-RCU updaters can use the \co{rcu_updater} class shown in
+RCU updaters can use the free functions shown in
 Figure~\ref{fig:RCU Updaters}.
-This class contains a \co{synchronize()} static member function,
+This class contains a \co{synchronize_rcu()} free function,
 which maps to the C-language \co{synchronize_rcu()} function, which
 waits for all pre-existing RCU readers to complete.
-It also contains the \co{barrier()} static member function,
-which maps to the C-language \co{rcu_barrier()} member function,
+It also contains the \co{rcu_barrier()} free function,
+which maps to the C-language \co{rcu_barrier()} function,
 which waits for all pending \co{retire()} and \co{rcu_retire()}
 deleters to be invoked.
 

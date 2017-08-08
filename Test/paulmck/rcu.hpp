@@ -109,19 +109,16 @@ namespace std {
         a.swap(b);
     }
 
-    // Methods for RCU updaters
-    class rcu_updater {
-    public:
-    	static void synchronize() noexcept
-	{
-	    synchronize_rcu();
-	}
+    // Free functions for RCU updaters
+    static void synchronize_rcu() noexcept
+    {
+	::synchronize_rcu();
+    }
 
-        static void barrier() noexcept
-        {
-            rcu_barrier();
-        }
-    };
+    static void rcu_barrier() noexcept
+    {
+	::rcu_barrier();
+    }
 
     namespace details {
 	template<typename T, typename D = default_delete<T>>
