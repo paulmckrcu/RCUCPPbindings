@@ -5,15 +5,22 @@
 \newblock [{RFC} git tree] userspace {RCU} (urcu) for {Linux}.
 \newblock \url{http://liburcu.org}, February 2009.
 
-\bibitem{PaulEMcKenney2015ReadMostly}
-{\sc McKenney, P.~E.}
-\newblock Recent read-mostly research in 2015.
-\newblock \url{http://lwn.net/Articles/667593/}, December 2015.
+\bibitem{MathieuDesnoyers2012URCU}
+{\sc Desnoyers, M., McKenney, P.~E., Stern, A., Dagenais, M.~R., and Walpole,
+  J.}
+\newblock User-level implementations of read-copy update.
+\newblock {\em IEEE Transactions on Parallel and Distributed Systems 23\/}
+  (2012), 375--382.
 
 \bibitem{PaulMcKenney2013LWNURCU}
 {\sc McKenney, P.~E., Desnoyers, M., and Jiangshan, L.}
 \newblock User-space {RCU}.
 \newblock \url{https://lwn.net/Articles/573424/}, November 2013.
+
+\bibitem{PaulEMcKenney2015ReadMostly}
+{\sc McKenney, P.~E., and Prasad, A.}
+\newblock Recent read-mostly research in 2015.
+\newblock \url{http://lwn.net/Articles/667593/}, December 2015.
 
 \bibitem{PaulEMcKennneyToolKitP0232R0}
 {\sc McKenney, P.~E., Wong, M., and Michael, M.}

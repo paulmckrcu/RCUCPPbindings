@@ -385,12 +385,20 @@ memory might use such deleters for convenience.
 However, such users are better served by the \co{std::rcu_retire()}
 templated free function shown on lines~7-8 of
 Figure~\ref{fig:Retiring RCU-Protected Objects}.
-Although this function can allocate of the retire/free path, high-quality
+Although this function can allocate on the retire/free path, high-quality
 implementations will take steps to ensure that such allocation is very
 rare, for example, by pre-allocating sufficient storage to avoid
 such allocation in the common case.
-Simple implementations can provide a trivial \co{std::rcu_retire()}
+Simple implementations can instead provide a trivial \co{std::rcu_retire()}
 function that is a thin wrapper around \co{std::rcu_obj_base::retire()}.
+
+User experience has shown that high-quality implementations
+of \co{std::rcu_retire()} can achieve better cache locality than can 
+high-quality implementations of \co{std::rcu_obj_base::retire()},
+which results in better performance and
+scalability~\cite{MathieuDesnoyers2012URCU}.
+Users wishing the best performance and scalability will therefore tend
+to prefer \co{std::rcu_retire()} over \co{std::rcu_obj_base::retire()}.
 
 \section{RCU Updaters}
 \label{sec:RCU Updaters}
