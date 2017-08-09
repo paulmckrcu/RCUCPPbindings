@@ -147,17 +147,17 @@ leading to the solution presented in this document.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1 void std::rcu_read_lock();
- 2 void std::rcu_read_unlock();
- 3 void std::synchronize_rcu();
- 4 void std::call_rcu(struct std::rcu_head *rhp,
- 5                    void cbf(class rcu_head *rhp));
- 6 void std::rcu_barrier();
- 7 void std::rcu_register_thread();
- 8 void std::rcu_unregister_thread();
- 9 void std::rcu_quiescent_state();
-10 void std::rcu_thread_offline();
-11 void std::rcu_thread_online();
+ 1 void rcu_read_lock();
+ 2 void rcu_read_unlock();
+ 3 void synchronize_rcu();
+ 4 void call_rcu(struct rcu_head *rhp,
+ 5               void cbf(struct rcu_head *rhp));
+ 6 void rcu_barrier();
+ 7 void rcu_register_thread();
+ 8 void rcu_unregister_thread();
+ 9 void rcu_quiescent_state();
+10 void rcu_thread_offline();
+11 void rcu_thread_online();
 \end{verbatim}
 }
 \caption{Existing C-Language RCU API}
@@ -170,7 +170,7 @@ userspace RCU~\cite{MathieuDesnoyers2009URCU,PaulMcKenney2013LWNURCU}.
 This API is provided for compatibility with existing C-language practice as
 well as to provide the highest performance for fast-path code.
 As we will see in
-Section~\ref{sec:Existing C-Language RCU API And C++},
+Section~\ref{sec:Existing C-Language RCU API and C++},
 the C++ user will not need to be concerned with most
 of these API members.
 
@@ -201,8 +201,7 @@ In most cases, \co{synchronize_rcu()} is easier to use, however, \co{call_rcu()}
 has the benefit of moving the grace-period delay off of the updater's
 critical path.
 Use of \co{call_rcu()} is thus critically important for good performance of
-update-heavy workloads, as has been repeatedly discovered by any number of
-people new to RCU~\cite{PaulEMcKenney2015ReadMostly}.
+update-heavy workloads~\cite{PaulEMcKenney2015ReadMostly}.
 
 Note that although \co{call_rcu()}'s callbacks are guaranteed not to be
 invoked too early, there is no guarantee that their execution won't be
@@ -243,8 +242,8 @@ Threads can also announce entry into and exit from \emph{extended
 quiescent states}, for example, before and after blocking system
 calls, using \co{rcu_thread_offline()} and \co{rcu_thread_online()}.
 
-\subsection{Existing C-Language RCU API And C++}
-\label{sec:Existing C-Language RCU API And C++}
+\subsection{Existing C-Language RCU API and C++}
+\label{sec:Existing C-Language RCU API and C++}
 
 Because of recent advances in both userspace RCU and the Linux kernel's
 support for userspace RCU, C++ users will not need to be concerned
@@ -254,9 +253,9 @@ Figure~\ref{fig:Existing C-Language RCU API}.
 Both \co{rcu_read_lock()} and \co{rcu_read_unlock()} are encapsulated
 in a C++ RAII class named \co{rcu_reader}.
 The \co{synchronize_rcu()} function is exposed via the
-\co{std::rcu_updater::synchronize()} static member function, and
+\co{std::synchronize_rcu()} static member function, and
 the \co{rcu_barrier()} function is exposed via the
-\co{std::rcu_updater::barrier()} static member function.
+\co{std::rcu_barrier()} static member function.
 The \co{call_rcu()} function is exposed via the
 \co{std::rcu_obj_base<T,D>::retire()} member function,
 and a non-intrusive variant of \co{call_rcu()} is exposed via the
@@ -279,7 +278,7 @@ to the C++ API as well as to the userspace RCU library.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1   class rcu_reader {
+ 1   class std::rcu_reader {
  2   public:
  3     rcu_reader() noexcept;
  4     rcu_reader(std::defer_lock_t) noexcept;
@@ -345,14 +344,14 @@ and~\ref{sec:Address Arithmetic}.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1 template<typename T, typename D = default_delete<T>>
- 2 class rcu_obj_base {
+ 1 template<typename T, typename D = std::default_delete<T>>
+ 2 class std::rcu_obj_base {
  3 public:
  4         void retire(D d = {});
  5 };
  6
- 7 template<typename T, typename D = default_delete<T>>
- 8 void rcu_retire(T *p, D d = {});
+ 7 template<typename T, typename D = std::default_delete<T>>
+ 8 void std::rcu_retire(T *p, D d = {});
 \end{verbatim}
 }
 \caption{Retiring RCU-Protected Objects}
@@ -414,8 +413,8 @@ related to \co{std::rcu_obj_base}.
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
- 1 static void synchronize_rcu() noexcept;
- 2 static void rcu_barrier() noexcept;
+ 1 void synchronize_rcu() noexcept;
+ 2 void rcu_barrier() noexcept;
 \end{verbatim}
 }
 \caption{RCU Updaters}
@@ -547,7 +546,7 @@ proposal is as follows:
 	objects.
 \item	The private \co{hazptr_obj} class is analogous to the pre-existing
 	\co{rcu_head} struct used in many RCU implementations.
-	Because this is a private hazard-pointers class, there is no
+	Because this class is an implementation detail, there is no
 	need to have compatible names.
 \item	There is no RCU class analogous to \co{hazptr_rec} because
 	RCU does not track (or need to track) references to individual
@@ -570,7 +569,8 @@ library.
 Specifically, this document proposes
 \co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}),
 \co{rcu_obj_base} (Figure~\ref{fig:Retiring RCU-Protected Objects}), and
-\co{rcu_updater} (Figure~\ref{sec:RCU Updaters}).
+a few free functions (Figures~\ref{fig:Retiring RCU-Protected Objects}
+and~\ref{fig:RCU Updaters}).
 We believe that these bindings are also appropriate for the type-oblivious
 C++ RCU implementations that information-hiding considerations are likely
 to favor.

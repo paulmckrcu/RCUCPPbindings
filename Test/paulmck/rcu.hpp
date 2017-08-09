@@ -110,12 +110,12 @@ namespace std {
     }
 
     // Free functions for RCU updaters
-    static void synchronize_rcu() noexcept
+    void synchronize_rcu() noexcept
     {
 	::synchronize_rcu();
     }
 
-    static void rcu_barrier() noexcept
+    void rcu_barrier() noexcept
     {
 	::rcu_barrier();
     }
