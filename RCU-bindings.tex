@@ -201,7 +201,8 @@ In most cases, \co{synchronize_rcu()} is easier to use, however, \co{call_rcu()}
 has the benefit of moving the grace-period delay off of the updater's
 critical path.
 Use of \co{call_rcu()} is thus critically important for good performance of
-update-heavy workloads~\cite{PaulEMcKenney2015ReadMostly}.
+update-heavy workloads, as has been demonstrated by user experience
+across a variety of environments~\cite{PaulEMcKenney2015ReadMostly}.
 
 Note that although \co{call_rcu()}'s callbacks are guaranteed not to be
 invoked too early, there is no guarantee that their execution won't be
@@ -299,7 +300,8 @@ to the C++ API as well as to the userspace RCU library.
 
 The \co{rcu_reader} class shown in
 Figure~\ref{fig:RAII RCU Readers}
-may be used for RAII RCU read-side critical sections.
+may be used for RAII RCU read-side critical sections, and
+models the \co{BasicLockable} concept.
 An argumentless constructor enters an RCU read-side critical section,
 a constructor with an argument of type \co{defer_lock_t} defers
 entering a critical section until a later call to a
