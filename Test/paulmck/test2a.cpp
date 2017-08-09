@@ -1,8 +1,11 @@
 #include <iostream>
 #include <unistd.h>
+#include <mutex>
 #define RCU_SIGNAL
 #include <urcu.h>
 #include <rcu.hpp>
+
+std::unique_lock<std::rcu_reader> blork;
 
 // Derived-type approach, and derived from ajodwyer/test2.cpp.
 // All bugs property of subsequent submitter.
