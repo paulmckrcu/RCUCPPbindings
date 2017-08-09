@@ -589,11 +589,14 @@ We are grateful to Jim Wasko for his support of this effort.
 This appendix contains historical proposals and directions.
 As such, it is strictly informational.
 
-\subsection{RCU Domains}
+\section{RCU Domains}
 \label{sec:RCU Domains}
 
 The userspace RCU library features several RCU implementations, each
 optimized for different use cases.
+
+\subsection{Compile-Time Domain Selection}
+\label{sec:Compile-Time Domain Selection}
 
 The quiescent-state based reclamation (QSBR) implementation is intended
 for standalone applications where the developers have full control
