@@ -343,6 +343,74 @@ Other historical approaches may be found in
 Sections~\ref{sec:Pointer To Enclosing Class}
 and~\ref{sec:Address Arithmetic}.
 
+\subsection{Retiring: User Experience}
+\label{sec:Retiring: User Experience}
+
+Known user experience either (1)~links newly retired
+objects together or (2)~references them from a set of vectors.
+Userspace RCU provides API members that do both:  \co{call_rcu()}
+links retired objects and \co{defer_rcu()} references them from a
+vector.
+
+The main advantage of the linking approach is that the retirement
+process can easily and efficiently ensure that no allocations occur on
+the retirement path, which is often part of the free path, thus avoiding
+out-of-memory deadlocks.
+Such deadlocks could otherwise occur if there was no memory available,
+and that lack of memory prevented retirement, and in turn preventing freeing.
+
+However, many applications avoid out-of-memory deadlocks by overprovisioning
+memory.
+For these applications, there is little or no reason to avoid allocating
+memory during the process of retiring objects.
+Such applications might choose to occasionally allocate vectors to
+keep track of newly retired objects.
+And this choice brings additional benefits:
+
+\begin{enumerate}
+\item	The greater cache locality of vectors has been shown to
+	improve the efficiency of the retirement
+	process~\cite{MathieuDesnoyers2012URCU}.
+\item	Removing the need to associate retirement-time objects with
+	the RCU-protected object also removes any restrictions in
+	type and inheritance.
+	For but one example, the vector approach allows retiring an
+	RCU-protected \co{String} instance.
+\item	If retirement is infrequent, but there is a very large number
+	of RCU-protected objects in existence, the vector approach
+	can offer a smaller memory footprint.
+\end{enumerate}
+
+There are a number of ways to manage the vectors:
+
+\begin{enumerate}
+\item	Fixed per-thread allocation, as is done for the \co{defer_rcu()}
+	interface in userspace RCU, with a \co{synchronize_rcu()}
+	invoked internally to \co{defer_rcu()} when the vector fills.
+	This performs quite well~\cite{MathieuDesnoyers2012URCU}, but
+	is not appropriate in environments where it is necessary to
+	retire objects from within RCU read-side critical sections.
+\item	Provide an initial set of per-thread vectors, allocating more
+	as these vectors fill, and enqueuing them for reuse after
+	their element's deleters have been invoked.
+\item	As above, but also using some mechanism to free vectors that
+	are not being used.
+\item	Allocate the retirement vectors as needed during memory allocation,
+	ensuring that there are enough slots to handle sudden
+	retirement of all instances of all dynamically allocated
+	objects.\footnote{
+		Kudos to Lance Roy for pointing out this possibility.}
+	The amount of retirement-path allocation can of course be reduced
+	by enqueuing them for reuse after their element's deleters have
+	been invoked.
+\end{enumerate}
+
+We expect further user experience to uncover additional strategies for
+tracking newly retired objects.
+
+\subsection{Retiring Proposed C++ APIs}
+\label{sec:Retiring Proposed C++ APIs}
+
 \begin{figure}[tbp]
 { \scriptsize
 \begin{verbatim}
@@ -359,6 +427,14 @@ and~\ref{sec:Address Arithmetic}.
 \caption{Retiring RCU-Protected Objects}
 \label{fig:Retiring RCU-Protected Objects}
 \end{figure}
+
+Bowing to both types of user experience, we propose an API that
+lends itself to linking retired objects and an API that lends
+itself to referencing retired objects via vectors.
+Note that a vector-based retirement implementation can simply ignore
+any per-object storage, and a linked-list retirement implementation
+can simply allocated the required storage on each retire.
+Higher-quality implementations can of course provide further optimizations.
 
 The \co{rcu_obj_base} class provides a \co{retire()} method that
 takes a deleter,
