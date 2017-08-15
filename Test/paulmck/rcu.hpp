@@ -3,45 +3,34 @@
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <tuple>
 #include <utility>
+#include <boost/compressed_pair.hpp>
 
 // Derived-type approach.  All RCU-protected data structures using this
 // approach must derive from std::rcu_obj_base, which in turn derives
 // from std::rcu_head.  No idea what happens in case of multiple inheritance.
 
 namespace std {
-    template<typename T, typename D = default_delete<T>, bool E = is_empty<D>::value>
-    class rcu_obj_base: private rcu_head {
-        D deleter;
+
+    namespace detail {
+        struct rcu_obj_base_empty_type {};
+    }
+
+    template<typename T, typename D = default_delete<T>>
+    class rcu_obj_base:
+        private rcu_head,
+        private boost::compressed_pair<D, detail::rcu_obj_base_empty_type> {
     public:
         void retire(D d = {})
         {
-            deleter = std::move(d);
+            this->first() = std::move(d);
             ::call_rcu(
                 static_cast<rcu_head *>(this),
                 [](rcu_head *rhp) {
                     auto rhdp = static_cast<rcu_obj_base *>(rhp);
                     auto obj = static_cast<T *>(rhdp);
-                    rhdp->deleter(obj);
-                }
-            );
-        }
-    };
-
-
-    // Specialization for when D is an empty type.
-
-    template<typename T, typename D>
-    class rcu_obj_base<T,D,true>: private rcu_head {
-    public:
-        void retire(D = {})
-        {
-            ::call_rcu(
-                static_cast<rcu_head *>(this),
-                [](rcu_head *rhp) {
-                    auto rhdp = static_cast<rcu_obj_base *>(rhp);
-                    auto obj = static_cast<T *>(rhdp);
-                    D()(obj);
+                    rhdp->first()(obj);
                 }
             );
         }
