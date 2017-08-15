@@ -509,6 +509,21 @@ which maps to the C-language \co{rcu_barrier()} function,
 which waits for all pending \co{retire()} and \co{rcu_retire()}
 deleters to be invoked.
 
+Usage experience thus far indicates that both of these functions must
+scale well, but that it is OK for them to have significant latency.
+In fact, the significant latency helps reduce per-request overhead
+by allowing concurrent callers' requests to be satisfied by the same
+underlying operation.
+Use cases that might otherwise require \co{synchronize_rcu()} to
+have lower latency should instead use one of the retire APIs, as
+these retire APIs impose extremely low latencies on their callers.
+
+The \co{rcu_barrier()} API is used when removing code or data structures
+that are used by the deleters passed to \co{call_rcu()}.
+In such cases, it is necessary to wait for any outstanding deleters to
+complete before freeing any code or data that those deleters might
+make accesses to.
+
 \section{Hazard Pointers and RCU: Which to Use?}
 \label{sec:Hazard Pointers and RCU: Which to Use?}
 
