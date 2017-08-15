@@ -33,7 +33,7 @@
 
 \author{
 {\bf Doc. No.: } WG21/D0461R2 \\
-{\bf Date: } 2017-08-13 \\
+{\bf Date: } 2017-08-15 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, Arthur O'Dwyer, David Hollman, \\
 Andrew Hunter, and Geoffrey Romer \\
@@ -151,13 +151,14 @@ leading to the solution presented in this document.
  2 void rcu_read_unlock();
  3 void synchronize_rcu();
  4 void call_rcu(struct rcu_head *rhp,
- 5               void cbf(struct rcu_head *rhp));
+ 5               void (*cbf)(struct rcu_head *rhp));
  6 void rcu_barrier();
  7 void rcu_register_thread();
  8 void rcu_unregister_thread();
  9 void rcu_quiescent_state();
 10 void rcu_thread_offline();
 11 void rcu_thread_online();
+12 void defer_rcu(void (*fct)(void *p), void *p);
 \end{verbatim}
 }
 \caption{Existing C-Language RCU API}
@@ -242,6 +243,12 @@ read-side critical section.
 Threads can also announce entry into and exit from \emph{extended
 quiescent states}, for example, before and after blocking system
 calls, using \co{rcu_thread_offline()} and \co{rcu_thread_online()}.
+
+Finally, \co{defer_rcu()} can be thought of as a non-intrusive
+variant of \co{call_rcu()} that maintains an array of references
+to memory awaiting callback invocation, as opposed to the traditional
+implementations of \co{call_rcu()}, which maintain references in a
+linked list.
 
 \subsection{Existing C-Language RCU API and C++}
 \label{sec:Existing C-Language RCU API and C++}
@@ -407,6 +414,9 @@ There are a number of ways to manage the vectors:
 	that retirement leads to freeing, and that there are some
 	rare but important algorithms for which this is not the
 	case~\cite{GauthamShenoy2006RCUrwlock,SrivatsaSBhat2014RCUrwlock,RanLiu2014PassiveRWLock,PedroRmalhete2015rwlockRCU,McKenney98}.
+	Furthermore, C++ allows special-purpose memory allocators to
+	be created easily, and it is not likely to be practical to
+	require all of them to interact with RCU.
 \end{enumerate}
 
 We expect further user experience to uncover additional strategies for
@@ -437,7 +447,7 @@ lends itself to linking retired objects and an API that lends
 itself to referencing retired objects via vectors.
 Note that a vector-based retirement implementation can simply ignore
 any per-object storage, and a linked-list retirement implementation
-can simply allocated the required storage on each retire.
+can simply allocate the required storage on each retire.
 Higher-quality implementations can of course provide further optimizations.
 
 The \co{rcu_obj_base} class provides a \co{retire()} method that
@@ -454,7 +464,7 @@ but one could also use a
 custom functor class with an \co{operator()} that carries out teardown actions
 before freeing the object, or a raw function pointer type such as
 \co{void(*)(T*)}.
-Given sufficient type erasure and reconsitution, the \co{call_rcu()}
+Given sufficient type erasure and reconstitution, the \co{call_rcu()}
 C-language free function from the userspace RCU library can be used to
 implement \co{retire()}.
 
@@ -505,10 +515,10 @@ related to \co{std::rcu_obj_base}.
 
 RCU updaters can use the free functions shown in
 Figure~\ref{fig:RCU Updaters}.
-This class contains a \co{synchronize_rcu()} free function,
+The \co{<rcu>} header provides a \co{synchronize_rcu()} free function,
 which maps to the C-language \co{synchronize_rcu()} function, which
 waits for all pre-existing RCU readers to complete.
-It also contains the \co{rcu_barrier()} free function,
+This header also provides the \co{rcu_barrier()} free function,
 which maps to the C-language \co{rcu_barrier()} function,
 which waits for all pending \co{retire()} and \co{rcu_retire()}
 deleters to be invoked.
