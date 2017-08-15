@@ -1,4 +1,10 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{SrivatsaSBhat2014RCUrwlock}
+{\sc Bhat, S.~S.}
+\newblock percpu\_rwlock: Implement the core design of per-{CPU} reader-writer
+  locks.
+\newblock \url{https://patchwork.kernel.org/patch/2157401/}, February 2014.
 
 \bibitem{MathieuDesnoyers2009URCU}
 {\sc Desnoyers, M.}
@@ -12,6 +18,13 @@
 \newblock {\em IEEE Transactions on Parallel and Distributed Systems 23\/}
   (2012), 375--382.
 
+\bibitem{RanLiu2014PassiveRWLock}
+{\sc Liu, R., Zhang, H., and Chen, H.}
+\newblock Scalable read-mostly synchronization using passive reader-writer
+  locks.
+\newblock In {\em 2014 USENIX Annual Technical Conference (USENIX ATC 14)\/}
+  (Philadelphia, PA, June 2014), USENIX Association, pp.~219--230.
+
 \bibitem{PaulMcKenney2013LWNURCU}
 {\sc McKenney, P.~E., Desnoyers, M., and Jiangshan, L.}
 \newblock User-space {RCU}.
@@ -22,6 +35,13 @@
 \newblock Recent read-mostly research in 2015.
 \newblock \url{http://lwn.net/Articles/667593/}, December 2015.
 
+\bibitem{McKenney98}
+{\sc McKenney, P.~E., and Slingwine, J.~D.}
+\newblock Read-copy update: Using execution history to solve concurrency
+  problems.
+\newblock In {\em {Parallel and Distributed Computing and Systems}\/} (Las
+  Vegas, NV, October 1998), pp.~509--518.
+
 \bibitem{PaulEMcKennneyToolKitP0232R0}
 {\sc McKenney, P.~E., Wong, M., and Michael, M.}
 \newblock P0232r0: A concurrency toolkit for structured deferral or optimistic
@@ -29,5 +49,19 @@
 \newblock
   \url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0232r0.pdf},
   February 2016.
+
+\bibitem{PedroRmalhete2015rwlockRCU}
+{\sc Ramalhete, P.}
+\newblock Implementing a reader-writer lock using rcu.
+\newblock
+  \url{http://concurrencyfreaks.blogspot.com/2015/10/implementing-reader-writer-lock-using.html},
+  October 2015.
+
+\bibitem{GauthamShenoy2006RCUrwlock}
+{\sc Shenoy, G.~R.}
+\newblock [patch 4/5] lock\_cpu\_hotplug: Redesign - lightweight implementation
+  of lock\_cpu\_hotplug.
+\newblock Available: \url{http://lkml.org/lkml/2006/10/26/73} [Viewed January
+  26, 2009], October 2006.
 
 \end{thebibliography}

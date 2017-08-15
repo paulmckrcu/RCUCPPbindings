@@ -403,6 +403,10 @@ There are a number of ways to manage the vectors:
 	The amount of retirement-path allocation can of course be reduced
 	by enqueuing them for reuse after their element's deleters have
 	been invoked.
+	However, please note that this approach assumes
+	that retirement leads to freeing, and that there are some
+	rare but important algorithms for which this is not the
+	case~\cite{GauthamShenoy2006RCUrwlock,SrivatsaSBhat2014RCUrwlock,RanLiu2014PassiveRWLock,PedroRmalhete2015rwlockRCU,McKenney98}.
 \end{enumerate}
 
 We expect further user experience to uncover additional strategies for
