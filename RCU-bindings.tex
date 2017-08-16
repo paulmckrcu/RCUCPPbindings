@@ -62,6 +62,9 @@ domains within a single translation unit, and which also contains
 useful background material and references.
 Later feedback and evaluation of existing RCU implementations permitted
 significant simplification.
+These simplifications eliminated domains, and this elimination will
+likely be revisited, certainly before any merge into the International
+Standard.
 Unlike WG21/P0279R1, which simply introduced RCU's C-language practice,
 this document presents proposals for C++-style RCU APIs.
 At present, it appears that these are not conflicting proposals, but
@@ -202,7 +205,7 @@ In most cases, \co{synchronize_rcu()} is easier to use, however, \co{call_rcu()}
 has the benefit of moving the grace-period delay off of the updater's
 critical path.
 Use of \co{call_rcu()} is thus critically important for good performance of
-update-heavy workloads, as has been demonstrated by user experience
+update-heavy workloads, as has been demonstrated by implementation experience
 across a variety of environments~\cite{PaulEMcKenney2015ReadMostly}.
 
 Note that although \co{call_rcu()}'s callbacks are guaranteed not to be
@@ -308,7 +311,7 @@ to the C++ API as well as to the userspace RCU library.
 The \co{rcu_reader} class shown in
 Figure~\ref{fig:RAII RCU Readers}
 may be used for RAII RCU read-side critical sections, and
-models the \co{BasicLockable} concept.
+satisfies the requirements of \co{BasicLockable}.
 An argumentless constructor enters an RCU read-side critical section,
 a constructor with an argument of type \co{defer_lock_t} defers
 entering a critical section until a later call to a
@@ -350,10 +353,10 @@ Other historical approaches may be found in
 Sections~\ref{sec:Pointer To Enclosing Class}
 and~\ref{sec:Address Arithmetic}.
 
-\subsection{Retiring: User Experience}
-\label{sec:Retiring: User Experience}
+\subsection{Retiring: Implementation Experience}
+\label{sec:Retiring: Implementation Experience}
 
-Known user experience either (1)~links newly retired
+Known implementation experience either (1)~links newly retired
 objects together or (2)~references them from a set of vectors.
 Userspace RCU provides API members that do both:  \co{call_rcu()}
 links retired objects and \co{defer_rcu()} references them from a
@@ -382,7 +385,7 @@ And this choice brings additional benefits:
 	the RCU-protected object also removes any restrictions in
 	type and inheritance.
 	For but one example, the vector approach allows retiring an
-	RCU-protected \co{String} instance.
+	RCU-protected \co{string} instance.
 \item	If retirement is infrequent, but there is a very large number
 	of RCU-protected objects in existence, the vector approach
 	can offer a smaller memory footprint.
@@ -419,7 +422,7 @@ There are a number of ways to manage the vectors:
 	require all of them to interact with RCU.
 \end{enumerate}
 
-We expect further user experience to uncover additional strategies for
+We expect further implementation experience to uncover additional strategies for
 tracking newly retired objects.
 
 \subsection{Retiring: Proposed C++ APIs}
@@ -442,7 +445,7 @@ tracking newly retired objects.
 \label{fig:Retiring RCU-Protected Objects}
 \end{figure}
 
-Bowing to both types of user experience, we propose an API that
+Bowing to both types of implementation experience, we propose an API that
 lends itself to linking retired objects and an API that lends
 itself to referencing retired objects via vectors.
 Note that a vector-based retirement implementation can simply ignore
@@ -455,7 +458,7 @@ takes a deleter,
 as shown in
 Figure~\ref{fig:Retiring RCU-Protected Objects}.
 This class contains any storage required by that deleter, so that
-the caller of
+the implementation of
 \co{std::rcu_obj_base<T,D>::retire()} never needs to allocate
 memory on the retire/free path.
 The deleter's \co{operator()} is invoked after a grace period.
@@ -483,12 +486,12 @@ such allocation in the common case.
 Simple implementations can instead provide a trivial \co{std::rcu_retire()}
 function that is a thin wrapper around \co{std::rcu_obj_base::retire()}.
 
-User experience has shown that high-quality implementations
+Implementation experience has shown that high-quality implementations
 of \co{std::rcu_retire()} can achieve better cache locality than can 
 high-quality implementations of \co{std::rcu_obj_base::retire()},
 which results in better performance and
 scalability.\footnote{
-	Note that this user experience is not limited to
+	Note that this implementation experience is not limited to
 	Google~\cite{MathieuDesnoyers2012URCU}.}
 Users wishing the best performance and scalability will therefore tend
 to prefer \co{std::rcu_retire()} over \co{std::rcu_obj_base::retire()}.
@@ -523,7 +526,7 @@ which maps to the C-language \co{rcu_barrier()} function,
 which waits for all pending \co{retire()} and \co{rcu_retire()}
 deleters to be invoked.
 
-Usage experience thus far indicates that both of these functions must
+Implementation experience thus far indicates that both of these functions must
 scale well, but that it is OK for them to have significant latency.
 In fact, the significant latency helps reduce per-request overhead
 by allowing concurrent callers' requests to be satisfied by the same
