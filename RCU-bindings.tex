@@ -424,6 +424,9 @@ There are a number of ways to manage the vectors:
 
 We expect further implementation experience to uncover additional strategies for
 tracking newly retired objects.
+In particular, we expect to see hybrid schemes that make use of per-object
+space via the \co{retire()} member function and that use vectors to
+track object passed to the \co{rcu_retire()} free function.
 
 \subsection{Retiring: Proposed C++ APIs}
 \label{sec:Retiring: Proposed C++ APIs}
@@ -434,7 +437,7 @@ tracking newly retired objects.
  1 template<typename T, typename D = std::default_delete<T>>
  2 class std::rcu_obj_base {
  3 public:
- 4         void retire(D d = {});
+ 4         void retire(D d = {}) noexcept;
  5 };
  6
  7 template<typename T, typename D = std::default_delete<T>>
