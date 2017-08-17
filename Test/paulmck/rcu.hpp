@@ -14,7 +14,7 @@ namespace std {
     class rcu_obj_base: private rcu_head {
         D deleter;
     public:
-        void retire(D d = {})
+        void retire(D d = {}) noexcept
         {
             deleter = std::move(d);
             ::call_rcu(
@@ -34,7 +34,7 @@ namespace std {
     template<typename T, typename D>
     class rcu_obj_base<T,D,true>: private rcu_head {
     public:
-        void retire(D = {})
+        void retire(D = {}) noexcept
         {
             ::call_rcu(
                 static_cast<rcu_head *>(this),
