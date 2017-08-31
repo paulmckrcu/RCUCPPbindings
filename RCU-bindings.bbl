@@ -18,6 +18,13 @@
 \newblock {\em IEEE Transactions on Parallel and Distributed Systems 23\/}
   (2012), 375--382.
 
+\bibitem{MaxKhiszinsky2015C++RCU}
+{\sc Khiszinsky, M.}
+\newblock Lock-free data structures. the inside. rcu.
+\newblock
+  \url{https://kukuruku.co/post/lock-free-data-structures-the-inside-rcu/},
+  February 2015.
+
 \bibitem{RanLiu2014PassiveRWLock}
 {\sc Liu, R., Zhang, H., and Chen, H.}
 \newblock Scalable read-mostly synchronization using passive reader-writer
