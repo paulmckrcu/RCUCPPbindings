@@ -417,7 +417,13 @@ There are a number of ways to manage the vectors:
 	However, please note that this approach assumes
 	that retirement leads to freeing, and that there are some
 	rare but important algorithms for which this is not the
-	case~\cite{GauthamShenoy2006RCUrwlock,SrivatsaSBhat2014RCUrwlock,RanLiu2014PassiveRWLock,PedroRmalhete2015rwlockRCU,McKenney98}.
+	case,\footnote{
+		Especially when using \co{synchronize_rcu()} instead
+		of \co{call_rcu()}~\cite{GauthamShenoy2006RCUrwlock,SrivatsaSBhat2014RCUrwlock,RanLiu2014PassiveRWLock,PedroRmalhete2015rwlockRCU,McKenney98}.}
+	with the Linux kernel's \co{rcu_sync} mechanism perhaps being
+	the most prominent.
+	The key point is that RCU's function is waiting for readers,
+	not necessarily reclaiming memory.
 	Furthermore, C++ allows special-purpose memory allocators to
 	be created easily, and it is not likely to be practical to
 	require all of them to interact with RCU.
