@@ -265,9 +265,9 @@ Figure~\ref{fig:Existing C-Language RCU API}.
 Both \co{rcu_read_lock()} and \co{rcu_read_unlock()} are encapsulated
 in a C++ RAII class named \co{rcu_reader}.
 The \co{synchronize_rcu()} function is exposed via the
-\co{std::synchronize_rcu()} static member function, and
-the \co{rcu_barrier()} function is exposed via the
-\co{std::rcu_barrier()} static member function.
+\co{std::synchronize_rcu()} free function, and
+the \co{rcu_barrier()} free function is exposed via the
+\co{std::rcu_barrier()} free function.
 The \co{call_rcu()} function is exposed via the
 \co{std::rcu_obj_base<T,D>::retire()} member function,
 and a non-intrusive variant of \co{call_rcu()} is exposed via the
@@ -283,6 +283,10 @@ and \co{rcu_thread_online()} to be dispensed with.
 
 Of course, implementation experience and use may result in changes
 to the C++ API as well as to the userspace RCU library.
+For example, the possibility of RCU domains is discussed in
+Appendix~\ref{sec:RCU Domains},
+and a few historical methods of handling retire are shown in
+Appendix~\ref{sec:Historical RCU-Protected Retirement Plans}.
 
 \section{RAII RCU Readers}
 \label{sec:RAII RCU Readers}
@@ -712,8 +716,58 @@ As such, it is strictly informational.
 \section{RCU Domains}
 \label{sec:RCU Domains}
 
-The userspace RCU library features several RCU implementations, each
-optimized for different use cases.
+All the RCU implementations we are aware of started with a single
+domain, and many still support only one domain.
+Where domains were added, they were added for two reasons:
+
+\begin{enumerate}
+\item	To allow alternative implementations with different design
+	tradeoffs, for example, the ``bottom half'' variant of
+	Linux-kernel RCU was added to allow Linux-kernel networking
+	to better defend against network-based denial-of-service
+	attacks.
+\item	In the case of Linux-kernel sleepable RCU (SRCU), to
+	isolate different SRCU users from each other, so that
+	one user having unusually long SRCU read-side critical
+	sections would not delay the grace periods of other users.
+\end{enumerate}
+
+It seems likely that the advent of a low-latency \co{sys_membarrier()}
+system call will permit almost all userspace RCU use cases to be
+addressed with a single implementation, so the first reason seems
+unlikely to apply in the short term.
+
+As to the second reason, SRCU did not appear until some years after
+RCU was first accepted into the Linux kernel, and it was many years
+before SRCU was used at all heavily.
+Even today, there are more than an order of magnitude more uses
+of RCU than of SRCU.
+Furthermore, many of the recent SRCU uses were motivated by the
+accidental fact that SRCU grace periods are shorter than
+non-expedited RCU grace periods, and unlike expedited RCU
+grace periods, SRCU grace periods do not degrade real-time
+response.
+
+In addition, initial uses of RCU in C++ appear to be targeted towards
+performance rather than abstraction (as expected), and performance use
+cases tend to focus on short RCU read-side critical sections and low
+update rates, each of which make domains less useful.
+Initial uses of RCU in C++ also seem to be focused solely on
+memory reclamation, and this use case can tolerate longer grace
+periods than can the more esoteric non-reclamation RCU use cases,
+again making RCU domains less useful.
+
+In time, it is quite possible that a need for C++ RCU domains will
+appear.
+However, we should start with a very simple non-domain API for the
+initial TS, and drive any proposals for the addition of domains from
+actual experience with both uses and implementations.
+
+Nevertheless, the following sections describe some historical proposals
+for RCU C++ domains.
+These were illustrated using the multiple userspace-RCU implementations,
+but were also intended to address the need for isolation of one users
+readers from other users' grace periods.
 
 \subsection{Compile-Time Domain Selection}
 \label{sec:Compile-Time Domain Selection}
@@ -807,7 +861,7 @@ shown in
 Figure~\ref{fig:Existing C-Language RCU API}.
 
 \section{Historical RCU-Protected Retirement Plans}
-\label{fig:Historical RCU-Protected Retirement Plans}
+\label{sec:Historical RCU-Protected Retirement Plans}
 
 This section lists alternative methods of retiring RCU-protected
 objects.
