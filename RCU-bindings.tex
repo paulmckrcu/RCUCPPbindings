@@ -735,7 +735,12 @@ Where domains were added, they were added for two reasons:
 It seems likely that the advent of a low-latency \co{sys_membarrier()}
 system call will permit almost all userspace RCU use cases to be
 addressed with a single implementation, so the first reason seems
-unlikely to apply in the short term.
+unlikely to apply to Linux systems in the short term.
+Note that Windows has had similar functionality for some time, and
+\co{sys_membarrier()} is quite simple, so can be easily added to
+other systems as needed.
+In the meantime, systems lacking \co{sys_membarrier()} can use one of
+the several userspace-RCU algorithms not relying on it.
 
 As to the second reason, SRCU did not appear until some years after
 RCU was first accepted into the Linux kernel, and it was many years
@@ -757,8 +762,18 @@ memory reclamation, and this use case can tolerate longer grace
 periods than can the more esoteric non-reclamation RCU use cases,
 again making RCU domains less useful.
 
-In time, it is quite possible that a need for C++ RCU domains will
-appear.
+Finally, use of domains can reduce RCU's update-side efficiency.
+To see this, note that production-quality RCU implementations
+can serve many thousands of grace-period requests with a single
+grace period~\cite{Sarma04c}, reducing the per-request grace-period
+overhead to nearly zero.
+Introducing domains increases the per-request overhead because each
+domain needs its own grace-period computation.
+Therefore, introduction of domains is an expensive step that should
+not be taken without a strong and urgent need.
+
+In time, it is quite possible that a strong and urgent need for C++
+RCU domains will appear.
 However, we should start with a very simple non-domain API for the
 initial TS, and drive any proposals for the addition of domains from
 actual experience with both uses and implementations.
@@ -766,8 +781,8 @@ actual experience with both uses and implementations.
 Nevertheless, the following sections describe some historical proposals
 for RCU C++ domains.
 These were illustrated using the multiple userspace-RCU implementations,
-but were also intended to address the need for isolation of one users
-readers from other users' grace periods.
+but were also intended to address the potential need for isolation of
+one user's readers from other users' grace periods.
 
 \subsection{Compile-Time Domain Selection}
 \label{sec:Compile-Time Domain Selection}

@@ -64,6 +64,13 @@
   \url{http://concurrencyfreaks.blogspot.com/2015/10/implementing-reader-writer-lock-using.html},
   October 2015.
 
+\bibitem{Sarma04c}
+{\sc Sarma, D., and McKenney, P.~E.}
+\newblock Making {RCU} safe for deep sub-millisecond response realtime
+  applications.
+\newblock In {\em Proceedings of the 2004 USENIX Annual Technical Conference
+  (FREENIX Track)\/} (June 2004), USENIX Association, pp.~182--191.
+
 \bibitem{GauthamShenoy2006RCUrwlock}
 {\sc Shenoy, G.~R.}
 \newblock [patch 4/5] lock\_cpu\_hotplug: Redesign - lightweight implementation
