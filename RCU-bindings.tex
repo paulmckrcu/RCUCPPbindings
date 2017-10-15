@@ -29,11 +29,11 @@
 }
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
-\title{D0461R2: Proposed RCU C++ API}
+\title{P0461R2: Proposed RCU C++ API}
 
 \author{
-{\bf Doc. No.: } WG21/D0461R2 \\
-{\bf Date: } 2017-09-26 \\
+{\bf Doc. No.: } WG21/P0461R2 \\
+{\bf Date: } 2017-10-15 \\
 {\bf Reply to: } Paul E. McKenney, Maged Michael, Michael Wong,\\
 Isabella Muerte, Arthur O'Dwyer, David Hollman, \\
 Andrew Hunter, Geoffrey Romer, and Lance Roy \\
@@ -48,7 +48,7 @@ ahh@google.com, gromer@google.com, and ldr709@gmail.com
 %\thispagestyle{empty}
 
 \pagestyle{myheadings}
-\markright{WG21/D0461R2}
+\markright{WG21/P0461R2}
 
 \maketitle
 
@@ -117,8 +117,10 @@ For more information on RCU, including RCU semantics, see
 WG21/P0462R0 (``Marking \co{memory_order_consume} Dependency Chains''),
 WG21/P0279R1 (``Read-Copy Update (RCU) for C++''),
 WG21/P0190R2 (``Proposal for New \co{memory_order_consume} Definition''),
+WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}''),
 and
-WG21/P0098R1 (``Towards Implementation and Use of \co{memory_order_consume}'').
+WG21/P0750R0 (``Consume'').\footnote{
+	WG21/P0750R0 expands on WG21/P0462R0 and WG21/P0190R2.}
 
 Specifically, this document proposes
 \co{rcu_reader} (Figure~\ref{fig:RAII RCU Readers}),
@@ -1086,7 +1088,11 @@ Further revisions to this document are as follows:
 \item	Add free functions for grace-period wait, retire-invocation
 	wait, and non-intrusive retire.
 \item	Add Khiszinsky citation.
-\item	Add explanatoin of the purpose of domains.
+	(August 31, 2017.)
+\item	Add explanation of the purpose of domains.
+	(October 2, 2017.)
+\item	Add reference to WG21/P0750R0.
+	(October 15, 2017.)
 \end{itemize}
 
 \end{document}
