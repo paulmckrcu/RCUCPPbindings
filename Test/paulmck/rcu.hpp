@@ -48,65 +48,28 @@ namespace std {
     };
 
     // RAII for RCU readers
-    class rcu_reader {
+    class rcu_domain {
     public:
-        rcu_reader() noexcept
-        {
-            rcu_read_lock();
-            active = true;
-        }
-        rcu_reader(std::defer_lock_t) noexcept
-        {
-            active = false;
-        }
-        rcu_reader(const rcu_reader &) = delete;
-        rcu_reader(rcu_reader&& other) noexcept
-        {
-            active = other.active;
-            other.active = false;
-        }
-        rcu_reader& operator=(const rcu_reader&) = delete;
-        rcu_reader& operator=(rcu_reader&& other) noexcept
-        {
-            if (active) {
-                rcu_read_unlock();
-            }
-            active = other.active;
-            other.active = false;
-            return *this;
-        }
-
-        ~rcu_reader() noexcept
-        {
-            if (active) {
-                rcu_read_unlock();
-            }
-        }
-
-        void swap(rcu_reader& other) noexcept
-        {
-            std::swap(active, other.active);
-        }
+        rcu_domain() {}
+        rcu_domain(const rcu_domain&) = delete;
+        rcu_domain& operator=(const rcu_domain&) = delete;
 
         void lock() noexcept
         {
             rcu_read_lock();
-            active = true;
         }
 
         void unlock() noexcept
         {
             rcu_read_unlock();
-            active = false;
         }
-
-    private:
-        bool active;
     };
 
-    void swap(rcu_reader& a, rcu_reader& b) noexcept
+    class rcu_domain the_rcu_default_domain;
+
+    rcu_domain& rcu_default_domain() noexcept
     {
-        a.swap(b);
+        return the_rcu_default_domain;
     }
 
     // Free functions for RCU updaters

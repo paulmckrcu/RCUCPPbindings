@@ -5,7 +5,7 @@
 #include <urcu.h>
 #include <rcu.hpp>
 
-std::unique_lock<std::rcu_reader> blork;
+// std::unique_lock<std::rcu_reader> blork;
 
 // Derived-type approach, and derived from ajodwyer/test2.cpp.
 // All bugs property of subsequent submitter.
@@ -13,17 +13,6 @@ std::unique_lock<std::rcu_reader> blork;
 struct foo: public std::rcu_obj_base<foo> {
     int a;
 };
-
-std::rcu_reader start_rcu_read()
-{
-	std::cout << "In start_rcu_read()\n";
-	return {};
-}
-
-void end_rcu_read(std::rcu_reader rdr)
-{
-	std::cout << "In end_rcu_read()\n";
-}
 
 void my_cb(foo *fp)
 {
@@ -41,15 +30,10 @@ int main(int argc, char **argv)
     rcu_register_thread();
 
     {
-	std::rcu_reader rdr1;
-	std::rcu_reader rdr2(std::defer_lock);
-	std::rcu_reader rdr4(std::defer_lock);
+	std::scoped_lock<std::rcu_domain> rdr1(std::rcu_default_domain());
 
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
-	rdr2 = std::move(rdr1);
-	rdr4 = start_rcu_read();
-	end_rcu_read(std::move(rdr4));
-	std::cout << "Back from end_rcu_read()\n";
+	std::cout << "End of attempted RAII\n";
     }
 
     // First with a normal function.
