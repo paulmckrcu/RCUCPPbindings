@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     std::rcu_retire(fp, my_cb);
     std::rcu_barrier();
 
-    std::synchronize_rcu();
+    std::rcu_synchronize();
 
     rcu_unregister_thread();
 
