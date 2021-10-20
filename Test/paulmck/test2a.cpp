@@ -53,6 +53,9 @@ int main(int argc, char **argv)
 
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
 	std::cout << "End of attempted RAII\n";
+
+	// Does std::scoped_lock<> need to know about rcu_domain
+	// in order to allow defer_lock tricks?
     }
 
     dynamic_reader();
