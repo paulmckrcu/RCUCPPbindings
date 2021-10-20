@@ -39,6 +39,24 @@ void dynamic_reader()
 	end_reader(my_rdr);
 }
 
+std::unique_lock<std::rcu_domain> start_deferred_reader()
+{
+    	std::unique_lock<std::rcu_domain> newu_rdr(std::rcu_default_domain());
+
+	return std::move(newu_rdr);
+}
+
+void end_deferred_reader(std::unique_lock<std::rcu_domain> oldu_rdr)
+{
+}
+
+void dynamic_deferred_reader()
+{
+	std::cout << "Attempting abstracted RCU reader via deferral\n";
+	auto rdrud = std::move(start_deferred_reader());
+	end_deferred_reader(std::move(rdrud));
+}
+
 int main(int argc, char **argv)
 {
     struct foo *fp = new struct foo;
@@ -67,6 +85,7 @@ int main(int argc, char **argv)
     }
 
     dynamic_reader();
+    dynamic_deferred_reader();
 
     // First with a normal function.
     fp->retire();
