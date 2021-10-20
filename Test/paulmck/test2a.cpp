@@ -55,7 +55,15 @@ int main(int argc, char **argv)
 	std::cout << "End of attempted RAII\n";
 
 	// Does std::scoped_lock<> need to know about rcu_domain
-	// in order to allow defer_lock tricks?
+	// in order to allow defer_lock tricks?  But unique_lock
+	// works just fine, see below.
+    }
+
+    {
+    	std::unique_lock<std::rcu_domain> rdru(std::rcu_default_domain());
+	std::cout << "RAII unique_lock\n";
+    	std::unique_lock<std::rcu_domain> rdrud(std::rcu_default_domain(), std::defer_lock);
+	rdrud = std::move(rdru);
     }
 
     dynamic_reader();
