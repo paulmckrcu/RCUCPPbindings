@@ -20,6 +20,25 @@ void my_cb(foo *fp)
 	delete(fp);
 }
 
+std::scoped_lock<std::rcu_domain> *start_reader()
+{
+	auto new_rdr = new std::scoped_lock<std::rcu_domain>(std::rcu_default_domain());
+
+	return new_rdr;
+}
+
+void end_reader(std::scoped_lock<std::rcu_domain> *old_rdr)
+{
+	delete old_rdr;
+}
+
+void dynamic_reader()
+{
+	std::cout << "Attempting abstracted RCU reader\n";
+	auto my_rdr = start_reader();
+	end_reader(my_rdr);
+}
+
 int main(int argc, char **argv)
 {
     struct foo *fp = new struct foo;
@@ -35,6 +54,8 @@ int main(int argc, char **argv)
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
 	std::cout << "End of attempted RAII\n";
     }
+
+    dynamic_reader();
 
     // First with a normal function.
     fp->retire();
