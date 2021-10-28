@@ -55,6 +55,7 @@ void dynamic_deferred_reader()
 	std::cout << "Attempting abstracted RCU reader via deferral\n";
 	auto rdrud = std::move(start_deferred_reader());
 	end_deferred_reader(std::move(rdrud));
+	// rdrud.unlock(); // Alternative for unique_lock.
 }
 
 int main(int argc, char **argv)
