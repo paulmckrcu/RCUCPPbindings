@@ -2,7 +2,10 @@
 #include <memory>
 #include <thread>
 #include <vector>
-#include "urcu-signal.hpp"
+#include <vector>
+#define RCU_SIGNAL
+#include <urcu.h>
+#include <rcu.hpp>
 #include "rcu_cell.hpp"
 
 struct A {
