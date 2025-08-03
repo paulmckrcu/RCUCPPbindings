@@ -25,8 +25,6 @@ void get(int *cur_a, int *cur_b)
 	*cur_b = mcp->b;
 }
 
-std::mutex mylock;
-
 void set(int cur_a, int cur_b)
 {
 	struct myconfig *mcp = new myconfig();
@@ -35,10 +33,7 @@ void set(int cur_a, int cur_b)
 	assert(mcp);
 	mcp->a = cur_a;
 	mcp->b = cur_b;
-	{
-		std::unique_lock lock(mylock);
-		oldmcp = curconfig.exchange(mcp);
-	}
+	oldmcp = curconfig.exchange(mcp);
 	std::rcu_synchronize();
 	delete oldmcp;
 }
