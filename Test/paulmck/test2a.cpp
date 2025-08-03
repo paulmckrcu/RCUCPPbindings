@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     rcu_register_thread();
 
     {
-	std::scoped_lock<std::rcu_domain> rdr1();
+	std::scoped_lock<std::rcu_domain> rdr1(std::rcu_default_domain());
 
 	std::cout << "Attempting RAII on fp->a " << fp->a << "\n";
 	std::cout << "End of attempted RAII\n";
