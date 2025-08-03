@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unistd.h>
-#include "urcu-signal.hpp"
+#define RCU_SIGNAL
+#include <urcu.h>
 #include "rcu.hpp"
 
 // Derived-type approach, and derived from ajodwyer/test3.cpp.
