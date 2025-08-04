@@ -2,7 +2,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
-#include <vector>
+#include <cassert>
 #define RCU_SIGNAL
 #include <urcu.h>
 #include <rcu.hpp>
